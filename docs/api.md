@@ -64,6 +64,7 @@ Member = { id, name, email, role }
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
 | POST | `/images` 👪 | `multipart/form-data`, 필드 `file` 1개 (최대 25MB). WebP로 변환해 R2에 저장 → `{ id, url, width, height, bytes }` |
+| DELETE | `/images/:id` 👪 | 작성 화면에서 뺀 사진 즉시 삭제 → `{ ok }`. **내가 올렸고 아직 피드에 연결되지 않은** 사진만. 남의 사진 403, 피드에 연결된 사진 409, 없으면 404. R2 삭제가 실패해도 200 (나중에 재시도) |
 | GET | `/images/file/*` 🔒 | **로컬 개발 전용** (R2 설정이 없을 때만 등록됨) |
 
 ## 기타

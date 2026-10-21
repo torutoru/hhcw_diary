@@ -59,6 +59,7 @@ export const api = {
   members: () => request<{ me: Member; members: Member[] }>('/members'),
   removeMember: (id: string) => request<{ ok: true; name: string }>(`/members/${id}`, { method: 'DELETE' }),
 
+  deleteImage: (id: string) => request<{ ok: true }>(`/images/${id}`, { method: 'DELETE' }),
   uploadImage: (file: Blob, filename: string) => {
     const form = new FormData();
     form.append('file', file, filename);

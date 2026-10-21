@@ -13,6 +13,8 @@ interface Slot {
   imageId?: string;
   status: 'uploading' | 'done' | 'error';
   error?: string;
+  /** 이 화면에서 새로 올린 사진. 빼면 서버에서 바로 지운다 (저장된 피드의 기존 사진은 저장할 때 정리) */
+  fresh?: boolean;
 }
 
 let seq = 0;
@@ -34,6 +36,8 @@ export default function ComposePage() {
   const coverInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
   const objectUrls = useRef<string[]>([]);
+  // 업로드가 끝나기 전에 뺀 사진. 업로드가 끝나는 즉시 지운다
+  const discarded = useRef(new Set<string>());
 
   useEffect(() => {
     api
@@ -60,15 +64,26 @@ export default function ComposePage() {
   function makeSlot(file: File): Slot {
     const preview = URL.createObjectURL(file);
     objectUrls.current.push(preview);
-    return { key: nextKey(), preview, status: 'uploading' };
+    return { key: nextKey(), preview, status: 'uploading', fresh: true };
   }
 
-  // 업로드 결과를 key 로 찾아 반영 (그 사이 사진을 뺐으면 무시)
+  /** 화면에서 뺀 사진 정리. 새로 올린 사진만 서버에서 바로 지운다 (실패해도 서버가 24시간 뒤 정리) */
+  function discard(slot: Slot) {
+    if (!slot.fresh) return;
+    discarded.current.add(slot.key);
+    if (slot.imageId) api.deleteImage(slot.imageId).catch(() => undefined);
+  }
+
+  // 업로드 결과를 key 로 찾아 반영. 그 사이 사진을 뺐으면 올라간 사진을 바로 지운다
   async function upload(slot: Slot, file: File, isCover: boolean) {
     let patch: Partial<Slot>;
     try {
       const blob = await preShrink(file);
       const res = await api.uploadImage(blob, file.name);
+      if (discarded.current.has(slot.key)) {
+        api.deleteImage(res.id).catch(() => undefined);
+        return;
+      }
       patch = { imageId: res.id, status: 'done' };
     } catch (err) {
       patch = { status: 'error', error: (err as Error).message };
@@ -81,6 +96,7 @@ export default function ComposePage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (cover) discard(cover);
     const slot = makeSlot(file);
     setCover(slot);
     upload(slot, file, true);
@@ -134,7 +150,10 @@ export default function ComposePage() {
   return (
     <>
       <header className="compose-header">
-        <Link to="/compose">취소</Link>
+        {/* 취소하면 이번에 올린 사진은 모두 지운다 */}
+        <Link to="/compose" onClick={() => all.forEach(discard)}>
+          취소
+        </Link>
         <h1 className="display">{heading}</h1>
         <span style={{ width: 56 }} />
       </header>
@@ -183,7 +202,10 @@ export default function ComposePage() {
                   type="button"
                   className="thumb-remove"
                   aria-label="사진 빼기"
-                  onClick={() => setExtras((list) => list.filter((x) => x.key !== s.key))}
+                  onClick={() => {
+                    discard(s);
+                    setExtras((list) => list.filter((x) => x.key !== s.key));
+                  }}
                 >
                   <CloseIcon size={12} strokeWidth={3} />
                 </button>

@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { db } from '../db/client.js';
-import { badRequest, notFound } from '../lib/errors.js';
+import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
+import { deleteStoredFiles } from '../lib/fileCleanup.js';
 import { toWebp } from '../lib/image.js';
 import { isR2Configured, readLocalFile, storage } from '../lib/storage.js';
 import { nowISO } from '../lib/time.js';
@@ -46,6 +47,23 @@ export async function imageRoutes(app: FastifyInstance) {
     });
   });
 
+  // 작성 화면에서 뺀 사진을 바로 지운다. 아직 피드에 연결되지 않은, 내가 올린 사진만 가능
+  // (피드에 연결된 사진은 피드를 저장할 때 빠지면 지워진다)
+  app.delete<{ Params: { id: string } }>('/api/images/:id', { preHandler: requireParent }, async (req) => {
+    const rs = await db.execute({
+      sql: 'SELECT storage_key, feed_id, uploader_id FROM images WHERE id = ?',
+      args: [req.params.id],
+    });
+    const row = rs.rows[0];
+    if (!row) throw notFound('이미 삭제된 사진이에요.');
+    if (row.uploader_id !== req.currentUser!.id) throw forbidden('내가 올린 사진만 삭제할 수 있어요.');
+    if (row.feed_id !== null) throw conflict('피드에 연결된 사진은 피드를 저장할 때 정리돼요.');
+
+    await db.execute({ sql: 'DELETE FROM images WHERE id = ? AND feed_id IS NULL', args: [req.params.id] });
+    await deleteStoredFiles([String(row.storage_key)], req.log);
+    return { ok: true };
+  });
+
   if (!isR2Configured) {
     // 로컬 개발용 파일 서빙
     app.get<{ Params: { '*': string } }>('/api/images/file/*', { preHandler: requireUser }, async (req, reply) => {
@@ -56,16 +74,22 @@ export async function imageRoutes(app: FastifyInstance) {
   }
 }
 
-/** 피드에 연결되지 않은 채 하루가 지난 사진(작성 취소 등)을 지운다 */
-export async function cleanupOrphanImages(log: (msg: string) => void) {
+/** 피드에 연결되지 않은 채 하루가 지난 사진(창을 그냥 닫은 경우 등)을 지운다 */
+export async function cleanupOrphanImages(log: FastifyBaseLogger) {
   const cutoff = new Date(Date.now() - ORPHAN_TTL_MS).toISOString();
   const rs = await db.execute({
     sql: 'SELECT id, storage_key FROM images WHERE feed_id IS NULL AND created_at < ?',
     args: [cutoff],
   });
-  for (const row of rs.rows) {
-    await storage.delete(String(row.storage_key));
-    await db.execute({ sql: 'DELETE FROM images WHERE id = ?', args: [row.id] });
-  }
-  if (rs.rows.length) log(`연결되지 않은 사진 ${rs.rows.length}장 정리`);
+  if (!rs.rows.length) return;
+
+  await db.execute({
+    sql: `DELETE FROM images WHERE feed_id IS NULL AND id IN (${rs.rows.map(() => '?').join(',')})`,
+    args: rs.rows.map((r) => r.id),
+  });
+  await deleteStoredFiles(
+    rs.rows.map((r) => String(r.storage_key)),
+    log,
+  );
+  log.info(`연결되지 않은 사진 ${rs.rows.length}장 정리`);
 }

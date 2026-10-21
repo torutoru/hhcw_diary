@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/client.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
+import { deleteStoredFiles } from '../lib/fileCleanup.js';
 import { storage } from '../lib/storage.js';
 import { nowISO, todayKST } from '../lib/time.js';
 import { requireParent, requireUser } from '../plugins/auth.js';
@@ -229,7 +230,7 @@ export async function feedRoutes(app: FastifyInstance) {
       ],
       'write',
     );
-    await Promise.all(removedKeys.map((key) => storage.delete(key).catch(() => undefined)));
+    await deleteStoredFiles(removedKeys, req.log);
     return { feed: await feedDetail(req.params.id) };
   });
 

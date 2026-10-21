@@ -45,6 +45,15 @@ CREATE TABLE IF NOT EXISTS images (
 );
 CREATE INDEX IF NOT EXISTS idx_images_feed ON images(feed_id, position);
 
+-- R2 파일 삭제에 실패한 경로. 서버 시작 시와 매 정각에 다시 지운다
+CREATE TABLE IF NOT EXISTS storage_deletions (
+  storage_key   TEXT PRIMARY KEY,
+  attempts      INTEGER NOT NULL DEFAULT 1,
+  last_error    TEXT,
+  created_at    TEXT NOT NULL,
+  last_tried_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS comments (
   id         TEXT PRIMARY KEY,
   feed_id    TEXT NOT NULL REFERENCES feeds(id),
