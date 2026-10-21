@@ -12,7 +12,7 @@
 | 회원가입 | `Signup.dc.html` | [frontend/src/pages/SignupPage.tsx](../../frontend/src/pages/SignupPage.tsx) (`/signup`) |
 | 메인 피드 | `Feed.dc.html` | [frontend/src/pages/FeedPage.tsx](../../frontend/src/pages/FeedPage.tsx) (`/`) |
 | 피드 상세 (모달) | `Detail.dc.html` | [frontend/src/components/FeedDetailModal.tsx](../../frontend/src/components/FeedDetailModal.tsx) (`/feeds/:id`) |
-| 피드 작성 / 수정 | `Compose.dc.html` | [frontend/src/pages/ComposePage.tsx](../../frontend/src/pages/ComposePage.tsx) (`/compose`) |
+| 피드 작성 / 수정 | `Compose.dc.html` | [frontend/src/pages/ComposePage.tsx](../../frontend/src/pages/ComposePage.tsx) (`/compose/:date`) |
 | 메인 피드 우측 상단 메뉴 | `Feed.dc.html` | [frontend/src/components/ProfileMenu.tsx](../../frontend/src/components/ProfileMenu.tsx) |
 | 가족 구성원 관리 | `Members.dc.html` | [frontend/src/pages/MembersPage.tsx](../../frontend/src/pages/MembersPage.tsx) (`/members`) |
 | 관리자 승인 메일 | `ApprovalEmail.dc.html` | [backend/src/templates/approvalEmail.ts](../../backend/src/templates/approvalEmail.ts) |
@@ -41,7 +41,8 @@
 
 - 가입 요청 → 관리자에게 승인 메일 → 링크 클릭으로 승인. 링크는 **1시간, 1회용**
 - 비밀번호 4자 이상
-- 피드는 **하루 한 번**, **부모(parent) 계정만** 작성·수정. 지난 피드는 수정 불가
+- 피드는 **날짜마다 하나**, **엄마·아빠 계정만** 작성·수정
+- **피드 작성하기** 버튼 → 달력(`/compose`, [CalendarPage.tsx](../../frontend/src/pages/CalendarPage.tsx)): 피드가 있는 날은 파란 점(누르면 수정), 빈 날은 누르면 작성. 미래 날짜는 선택 불가 (시안에는 없는 화면으로, 사용자 요청으로 추가)
 - 사진: 대표 사진 1장(필수) + 추가 최대 5장
 - 가족 구성원 관리: 관리자('엄마', '아빠')만 들어올 수 있고, 다른 구성원을 제거(탈퇴 처리)할 수 있음. 그 외에는 "관리자만 볼 수 있어요" 화면
 - 메인 피드 카드: 댓글 앞 2개 미리보기 + "댓글 N개 더보기"

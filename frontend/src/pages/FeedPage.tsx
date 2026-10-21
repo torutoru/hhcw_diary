@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import FeedCard from '../components/FeedCard';
-import { HomeIcon, PencilIcon, PlusIcon } from '../components/Icons';
+import { HomeIcon, PlusIcon } from '../components/Icons';
 import ProfileMenu from '../components/ProfileMenu';
 
 export interface FeedOutletContext {
@@ -79,7 +79,6 @@ export default function FeedPage() {
   }, []);
 
   const isParent = user?.role === 'parent';
-  const todayPosted = items[0]?.isToday ?? false;
 
   return (
     <>
@@ -94,10 +93,11 @@ export default function FeedPage() {
       </header>
 
       <main className="feed-main">
-        {isParent && !loading && !error && (
-          <Link to="/compose" className={`btn write-btn ${todayPosted ? 'is-edit' : 'btn-primary'}`}>
-            {todayPosted ? <PencilIcon /> : <PlusIcon />}
-            {todayPosted ? '오늘의 피드 수정하기' : '오늘의 피드 작성하기'}
+        {/* 달력에서 날짜를 골라 작성하거나 수정한다 */}
+        {isParent && (
+          <Link to="/compose" className="btn write-btn btn-primary">
+            <PlusIcon />
+            피드 작성하기
           </Link>
         )}
 

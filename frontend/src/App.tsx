@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import FeedDetailModal from './components/FeedDetailModal';
+import CalendarPage from './pages/CalendarPage';
 import ComposePage from './pages/ComposePage';
 import ConfirmPage from './pages/ConfirmPage';
 import FeedPage from './pages/FeedPage';
@@ -36,7 +37,8 @@ export default function App() {
           {/* 피드 목록 위에 모달로 띄운다 */}
           <Route path="feeds/:id" element={<FeedDetailModal />} />
         </Route>
-        <Route path="/compose" element={<RequireAuth parentOnly><ComposePage /></RequireAuth>} />
+        <Route path="/compose" element={<RequireAuth parentOnly><CalendarPage /></RequireAuth>} />
+        <Route path="/compose/:date" element={<RequireAuth parentOnly><ComposePage /></RequireAuth>} />
         {/* 권한이 없으면 페이지 안에서 "관리자만 볼 수 있어요"를 보여준다 */}
         <Route path="/members" element={<RequireAuth><MembersPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />

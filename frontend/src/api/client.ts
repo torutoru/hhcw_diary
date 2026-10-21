@@ -39,10 +39,13 @@ export const api = {
 
   feeds: (before?: string) =>
     request<FeedListResponse>(`/feeds${before ? `?before=${before}` : ''}`),
-  today: () => request<{ date: string; feed: FeedDetail | null }>('/feeds/today'),
+  feedDates: (month: string) =>
+    request<{ month: string; today: string; dates: string[] }>(`/feeds/dates?month=${month}`),
+  feedByDate: (date: string) =>
+    request<{ date: string; isToday: boolean; feed: FeedDetail | null }>(`/feeds/by-date/${date}`),
   feed: (id: string) => request<{ feed: FeedDetail }>(`/feeds/${id}`),
-  createFeed: (body: string, imageIds: string[]) =>
-    request<{ feed: FeedDetail }>('/feeds', { method: 'POST', body: json({ body, imageIds }) }),
+  createFeed: (date: string, body: string, imageIds: string[]) =>
+    request<{ feed: FeedDetail }>('/feeds', { method: 'POST', body: json({ date, body, imageIds }) }),
   updateFeed: (id: string, body: string, imageIds: string[]) =>
     request<{ feed: FeedDetail }>(`/feeds/${id}`, { method: 'PUT', body: json({ body, imageIds }) }),
 

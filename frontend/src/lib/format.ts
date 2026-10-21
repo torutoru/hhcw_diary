@@ -20,6 +20,14 @@ const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric'
 /** 10월 21일 수요일 */
 export const formatFeedDate = (date: string) => monthDayWeekday.format(fromDateKey(date));
 
+/** 한국 시간 기준 오늘 (YYYY-MM-DD) */
+export const todayKey = () => dateKey.format(new Date());
+
+/** 올해면 "10월 21일 수요일", 다른 해면 "2025년 10월 21일 화요일" */
+export function formatComposeDate(date: string) {
+  return date.slice(0, 4) === todayKey().slice(0, 4) ? formatFeedDate(date) : formatFullDate(date);
+}
+
 /** 2026년 10월 21일 수요일 */
 export const formatFullDate = (date: string) => fullDate.format(fromDateKey(date));
 

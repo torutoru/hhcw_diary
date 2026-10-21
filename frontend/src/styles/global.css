@@ -17,6 +17,7 @@
   --border-soft: #e4e1d8;
   --divider: #eeebe3;
   --dashed: #b9b4a6;
+  --dot: #2f6fd6;
   --placeholder: #dce8df;
 
   --font-body: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
@@ -434,11 +435,6 @@ textarea {
   border-radius: 16px;
   font-size: 16px;
 }
-.write-btn.is-edit {
-  background: var(--surface);
-  border: 1.5px solid var(--primary);
-  color: var(--primary);
-}
 
 .feed-card {
   display: flex;
@@ -761,6 +757,119 @@ textarea {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* ---------- 피드 작성 달력 ---------- */
+.calendar-page {
+  flex: 1;
+  padding: 18px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.calendar {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 12px 10px 14px;
+}
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 8px;
+}
+.calendar-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.calendar-head .icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 4px;
+}
+.calendar-weekday {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.calendar-weekday.is-sun {
+  color: var(--danger);
+}
+.calendar-day {
+  height: 52px;
+  margin: 0 2px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  cursor: pointer;
+}
+.calendar-day:hover:not(:disabled) {
+  background: var(--bg);
+}
+.calendar-day:disabled {
+  color: #b9b4a6;
+  cursor: default;
+}
+.calendar-day.is-today {
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+}
+.calendar-day.is-today .calendar-num {
+  font-weight: 700;
+  color: var(--primary);
+}
+.calendar-num {
+  font-size: 15px;
+  line-height: 1;
+}
+/* 점 자리는 항상 비워 두고, 피드가 있는 날만 색을 채운다 (숫자 위치가 흔들리지 않게) */
+.calendar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+}
+.calendar-day.has-feed .calendar-dot,
+.calendar-dot.is-sample {
+  background: var(--dot);
+}
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.calendar-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.calendar-dot.is-sample {
+  display: inline-block;
+}
+.calendar-empty-sample {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dashed);
 }
 
 /* ---------- 사진 크게 보기 ---------- */

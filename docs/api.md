@@ -20,10 +20,11 @@
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
 | GET | `/feeds?before=YYYY-MM-DD&limit=10` 🔒 | 최신순 목록. `{ items: FeedListItem[], nextBefore }`. 다음 페이지는 `before=nextBefore` |
-| GET | `/feeds/today` 🔒 | `{ date, feed: FeedDetail \| null }` (작성/수정 화면용) |
+| GET | `/feeds/dates?month=YYYY-MM` 🔒 | 달력용. `{ month, today, dates: string[] }` — 그 달에 피드가 있는 날짜 |
+| GET | `/feeds/by-date/:date` 🔒 | `{ date, isToday, feed: FeedDetail \| null }` (작성/수정 화면용). 미래·없는 날짜는 400 |
 | GET | `/feeds/:id` 🔒 | `{ feed: FeedDetail }` |
-| POST | `/feeds` 👪 | 오늘 피드 작성. `{ body, imageIds: [대표, ...추가] }` (1~6장). 오늘 피드가 있으면 409 |
-| PUT | `/feeds/:id` 👪 | 오늘 피드 수정. 본문은 POST와 같음. 빠진 사진은 R2에서 삭제. 지난 피드는 403 |
+| POST | `/feeds` 👪 | 피드 작성. `{ date?, body, imageIds: [대표, ...추가] }` (1~6장). `date` 없으면 오늘. 지난 날짜 가능, 미래는 400. 그 날짜에 이미 있으면 409 |
+| PUT | `/feeds/:id` 👪 | 피드 수정 (지난 날짜 포함). 본문은 `{ body, imageIds }`. 빠진 사진은 R2에서 삭제 |
 
 ```ts
 FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { author, body }[] /* 앞 2개 */ }

@@ -11,10 +11,26 @@ import { requireParent, requireUser } from '../plugins/auth.js';
 const MAX_PHOTOS = 6; // 대표 사진 1 + 추가 5
 const PREVIEW_COMMENTS = 2;
 
+// 실제로 있는 날짜이면서 오늘(KST) 이전인지. 미래 날짜의 피드는 만들 수 없다
+const feedDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않아요.')
+  .refine((d) => new Date(`${d}T00:00:00Z`).toISOString().slice(0, 10) === d, '없는 날짜예요.')
+  .refine((d) => d <= todayKST(), '아직 오지 않은 날의 피드는 쓸 수 없어요.');
+
 const feedBody = z.object({
   body: z.string().max(5000).default(''),
   // 첫 번째가 대표 사진
   imageIds: z.array(z.string().uuid()).min(1, '대표 사진을 골라 주세요.').max(MAX_PHOTOS, `사진은 ${MAX_PHOTOS}장까지 올릴 수 있어요.`),
+});
+
+const createBody = feedBody.extend({
+  // 없으면 오늘. 지난 날짜의 피드도 쓸 수 있다
+  date: feedDate.optional(),
+});
+
+const monthQuery = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/, '월 형식이 올바르지 않아요.'),
 });
 
 const listQuery = z.object({
@@ -153,11 +169,22 @@ export async function feedRoutes(app: FastifyInstance) {
     };
   });
 
-  // 오늘 피드 (작성/수정 화면용). 없으면 feed: null
-  app.get('/api/feeds/today', { preHandler: requireUser }, async () => {
-    const rs = await db.execute({ sql: 'SELECT id FROM feeds WHERE feed_date = ?', args: [todayKST()] });
+  // 달력용: 그 달에 피드가 있는 날짜 목록
+  app.get('/api/feeds/dates', { preHandler: requireUser }, async (req) => {
+    const { month } = monthQuery.parse(req.query);
+    const rs = await db.execute({
+      sql: 'SELECT feed_date FROM feeds WHERE feed_date LIKE ? ORDER BY feed_date',
+      args: [`${month}-%`],
+    });
+    return { month, today: todayKST(), dates: rs.rows.map((r) => String(r.feed_date)) };
+  });
+
+  // 특정 날짜의 피드 (작성/수정 화면용). 없으면 feed: null
+  app.get<{ Params: { date: string } }>('/api/feeds/by-date/:date', { preHandler: requireUser }, async (req) => {
+    const date = feedDate.parse(req.params.date);
+    const rs = await db.execute({ sql: 'SELECT id FROM feeds WHERE feed_date = ?', args: [date] });
     const id = rs.rows[0]?.id;
-    return { date: todayKST(), feed: id ? await feedDetail(String(id)) : null };
+    return { date, isToday: date === todayKST(), feed: id ? await feedDetail(String(id)) : null };
   });
 
   app.get<{ Params: { id: string } }>('/api/feeds/:id', { preHandler: requireUser }, async (req) => {
@@ -166,12 +193,11 @@ export async function feedRoutes(app: FastifyInstance) {
     return { feed };
   });
 
-  // 하루 한 번: 오늘 날짜 피드가 없을 때만 만들 수 있다
+  // 하루 한 번: 그 날짜의 피드가 없을 때만 만들 수 있다
   app.post('/api/feeds', { preHandler: requireParent }, async (req, reply) => {
-    const { body, imageIds } = feedBody.parse(req.body);
-    const today = todayKST();
-    const exists = await db.execute({ sql: 'SELECT id FROM feeds WHERE feed_date = ?', args: [today] });
-    if (exists.rows[0]) throw conflict('오늘 피드는 이미 올라와 있어요. 수정하기를 이용해 주세요.');
+    const { body, imageIds, date = todayKST() } = createBody.parse(req.body);
+    const exists = await db.execute({ sql: 'SELECT id FROM feeds WHERE feed_date = ?', args: [date] });
+    if (exists.rows[0]) throw conflict('이 날짜의 피드는 이미 있어요. 달력에서 그 날짜를 눌러 수정해 주세요.');
 
     const id = randomUUID();
     const now = nowISO();
@@ -180,7 +206,7 @@ export async function feedRoutes(app: FastifyInstance) {
       [
         {
           sql: 'INSERT INTO feeds (id, feed_date, author_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-          args: [id, today, req.currentUser!.id, body, now, now],
+          args: [id, date, req.currentUser!.id, body, now, now],
         },
         ...stmts,
       ],
@@ -189,12 +215,11 @@ export async function feedRoutes(app: FastifyInstance) {
     return reply.code(201).send({ feed: await feedDetail(id) });
   });
 
-  // 수정은 오늘 피드만 가능
+  // 지난 날짜의 피드도 수정할 수 있다 (달력에서 선택)
   app.put<{ Params: { id: string } }>('/api/feeds/:id', { preHandler: requireParent }, async (req) => {
     const { body, imageIds } = feedBody.parse(req.body);
-    const rs = await db.execute({ sql: 'SELECT feed_date FROM feeds WHERE id = ?', args: [req.params.id] });
+    const rs = await db.execute({ sql: 'SELECT 1 FROM feeds WHERE id = ?', args: [req.params.id] });
     if (!rs.rows[0]) throw notFound('피드를 찾을 수 없어요.');
-    if (rs.rows[0].feed_date !== todayKST()) throw forbidden('지난 피드는 수정할 수 없어요.');
 
     const { stmts, removedKeys } = await photoStatements(req.params.id, imageIds);
     await db.batch(

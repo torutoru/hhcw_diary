@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { CloseIcon, PhotoIcon, PlusIcon } from '../components/Icons';
-import { formatFeedDate } from '../lib/format';
+import { formatComposeDate } from '../lib/format';
 import { preShrink } from '../lib/imageResize';
 
 const MAX_EXTRA = 5;
@@ -18,9 +18,11 @@ interface Slot {
 let seq = 0;
 const nextKey = () => `slot-${++seq}`;
 
+/** /compose/:date — 달력에서 고른 날짜의 피드 작성(없을 때) 또는 수정(있을 때) */
 export default function ComposePage() {
   const navigate = useNavigate();
-  const [date, setDate] = useState('');
+  const { date = '' } = useParams();
+  const [isToday, setIsToday] = useState(false);
   const [feedId, setFeedId] = useState<string | null>(null);
   const [cover, setCover] = useState<Slot | null>(null);
   const [extras, setExtras] = useState<Slot[]>([]);
@@ -28,15 +30,16 @@ export default function ComposePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const coverInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
   const objectUrls = useRef<string[]>([]);
 
   useEffect(() => {
     api
-      .today()
-      .then(({ date, feed }) => {
-        setDate(date);
+      .feedByDate(date)
+      .then(({ isToday, feed }) => {
+        setIsToday(isToday);
         if (!feed) return;
         setFeedId(feed.id);
         setBody(feed.body);
@@ -49,10 +52,10 @@ export default function ComposePage() {
         setCover(first ?? null);
         setExtras(rest);
       })
-      .catch((err) => setError((err as Error).message))
+      .catch((err) => setLoadError((err as Error).message))
       .finally(() => setLoading(false));
     return () => objectUrls.current.forEach((u) => URL.revokeObjectURL(u));
-  }, []);
+  }, [date]);
 
   function makeSlot(file: File): Slot {
     const preview = URL.createObjectURL(file);
@@ -103,7 +106,7 @@ export default function ComposePage() {
     try {
       const imageIds = all.map((s) => s.imageId!);
       if (feedId) await api.updateFeed(feedId, body, imageIds);
-      else await api.createFeed(body, imageIds);
+      else await api.createFeed(date, body, imageIds);
       navigate('/', { replace: true });
     } catch (err) {
       setError((err as Error).message);
@@ -112,22 +115,34 @@ export default function ComposePage() {
   }
 
   const isEdit = feedId !== null;
-  const heading = isEdit ? '오늘의 피드 수정' : '오늘의 피드 작성';
+  const heading = `${isToday ? '오늘의 ' : ''}피드 ${isEdit ? '수정' : '작성'}`;
 
   if (loading) return <div className="center-loading">불러오는 중…</div>;
+
+  // 잘못된 날짜(미래, 없는 날짜)로 들어온 경우
+  if (loadError) {
+    return (
+      <main className="result">
+        <h1 className="display">{loadError}</h1>
+        <Link to="/compose" className="btn btn-primary">
+          달력으로 돌아가기
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <>
       <header className="compose-header">
-        <Link to="/">취소</Link>
+        <Link to="/compose">취소</Link>
         <h1 className="display">{heading}</h1>
         <span style={{ width: 56 }} />
       </header>
 
       <main className="compose">
         <div className="compose-date">
-          <span className="badge-today">오늘</span>
-          <span>{date && formatFeedDate(date)}</span>
+          {isToday && <span className="badge-today">오늘</span>}
+          <span>{formatComposeDate(date)}</span>
           <span className="hint">· 하루 한 번</span>
         </div>
 
