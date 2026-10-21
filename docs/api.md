@@ -9,11 +9,16 @@
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| POST | `/auth/signup` | 가입 요청. `{ email, password(4자+), name(호칭) }` → 201. 관리자에게 승인 메일 발송. 호칭이 '엄마'/'아빠'면 `parent`, 그 외 `member`. 승인 대기 중인 이메일로 다시 요청하면 정보 갱신 후 새 링크 발송. 이미 가입된 이메일, 이미 쓰이는 '엄마'/'아빠' 호칭은 409 |
-| GET | `/signup/confirm/:token` | 승인 메일 링크. 처리 후 `{APP_URL}/signup/confirm?status=success\|expired\|used\|invalid\|taken&email=…&name=…` 로 302 이동 |
+| POST | `/auth/signup` | 가입 요청. `{ email, password(4자+), relation(가족관계), nickname(호칭) }` → 201. 관리자에게 승인 메일 발송. 가족관계가 '엄마'/'아빠'면 `parent`, 그 외 `member`. 승인 대기 중인 이메일로 다시 요청하면 정보 갱신 후 새 링크 발송. 이미 가입된 이메일, 이미 등록된 '엄마'/'아빠' 가족관계는 409 |
+| GET | `/signup/confirm/:token` | 승인 메일 링크. 처리 후 `{APP_URL}/signup/confirm?status=success\|expired\|used\|invalid\|taken&email=…&relation=…` 로 302 이동 |
 | POST | `/auth/login` | `{ email, password, remember? }` → `{ user }` + 쿠키. 틀리면 401, 승인 전·제거된 계정이면 403. `remember: true` 면 400일 쿠키, 아니면 브라우저를 닫으면 사라지는 세션 쿠키(최대 1일) |
 | POST | `/auth/logout` | 쿠키 삭제 |
-| GET | `/auth/me` 🔒 | `{ user: { id, email, name, role } }`. `remember` 로 로그인한 세션이면 쿠키 만료를 다시 400일로 늘림 |
+| GET | `/auth/me` 🔒 | `{ user: User }`. `remember` 로 로그인한 세션이면 쿠키 만료를 다시 400일로 늘림 |
+| PATCH | `/auth/me` 🔒 | 내 정보 수정. `{ nickname }` (1~20자) → `{ user }`. 이메일·가족관계는 바꿀 수 없음 (보내도 무시) |
+
+```ts
+User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가족관계: 권한 기준 */, role: 'parent' | 'member' }
+```
 
 ## 피드
 
@@ -27,8 +32,8 @@
 | PUT | `/feeds/:id` 👪 | 피드 수정 (지난 날짜 포함). 본문은 `{ body, imageIds }`. 빠진 사진은 R2에서 삭제 |
 
 ```ts
-FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { author, body }[] /* 앞 2개 */ }
-FeedDetail   = { id, date, isToday, body, author, createdAt, updatedAt, commentCount, photos: { id, url, width, height }[] }
+FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { id, author, authorRelation, body, deleted }[] /* 앞 2개 */ }
+FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, updatedAt, commentCount, photos: { id, url, width, height }[] }
 ```
 
 ## 댓글
@@ -40,7 +45,7 @@ FeedDetail   = { id, date, isToday, body, author, createdAt, updatedAt, commentC
 | DELETE | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 삭제 → `{ ok }`. 남의 댓글은 403, 이미 삭제됐거나 없으면 404 |
 
 ```ts
-Comment = { id, author, body, createdAt, deleted /* 삭제됨이면 body 는 "" */, mine /* 내 댓글 */ }
+Comment = { id, author /* 호칭 */, authorRelation /* 가족관계 */, body, createdAt, deleted /* 삭제됨이면 body 는 "" */, mine /* 내 댓글 */ }
 ```
 
 - 삭제는 본문을 비우고 `deleted_at` 을 기록합니다 (행은 남김). 화면에는 그 자리에 "작성자의 요청으로 댓글이 삭제되었습니다"가 표시됩니다.
@@ -50,12 +55,8 @@ Comment = { id, author, body, createdAt, deleted /* 삭제됨이면 body 는 "" 
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| GET | `/members` 👪 | `{ me: Member, members: Member[] }`. `members` 는 나를 뺀 승인된 구성원 (승인 순) |
-| DELETE | `/members/:id` 👪 | 구성원 제거(탈퇴 처리) → `{ ok, name }`. 나 자신은 400, 이미 제거됐거나 없으면 404 |
-
-```ts
-Member = { id, name, email, role }
-```
+| GET | `/members` 👪 | `{ me: User, members: User[] }`. `members` 는 나를 뺀 승인된 구성원 (승인 순) |
+| DELETE | `/members/:id` 👪 | 구성원 제거(탈퇴 처리) → `{ ok, nickname }`. 나 자신은 400, 이미 제거됐거나 없으면 404 |
 
 제거된 계정은 바로 세션이 끊기고, 로그인하면 403("가족에서 제거된 계정이에요")을 받습니다. 다시 가입 요청을 보내 관리자 승인을 받으면 돌아올 수 있습니다.
 

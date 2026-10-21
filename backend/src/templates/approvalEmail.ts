@@ -3,7 +3,8 @@ const escape = (s: string) =>
 
 interface Params {
   email: string;
-  name: string;
+  relation: string;
+  nickname: string;
   canWrite: boolean;
   requestedAt: string;
   expiresAt: string;
@@ -32,7 +33,8 @@ export function approvalEmail(p: Params) {
   <h1 style="margin:24px 0;font-size:28px;font-weight:400">새 가족이 가입을 요청했어요</h1>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F2EC;border-radius:14px;padding:12px 20px">
     ${row('요청 이메일', escape(p.email), true)}
-    ${row('호칭', escape(p.name))}
+    ${row('가족관계', escape(p.relation))}
+    ${row('호칭', escape(p.nickname))}
     ${row('권한', p.canWrite ? '피드 작성·수정 + 댓글' : '보기 + 댓글')}
     ${row('요청 시각', escape(p.requestedAt))}
     ${row('링크 만료', `${escape(p.expiresAt)} (1시간 후)`)}

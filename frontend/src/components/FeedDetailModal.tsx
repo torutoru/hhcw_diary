@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Comment, FeedDetail } from '../api/types';
-import { avatarColor } from '../lib/avatar';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import ConfirmSheet from './ConfirmSheet';
 import Lightbox from './Lightbox';
+import { Avatar, PersonName } from './Person';
 import { formatDateTime, formatFullDate, formatWrittenLine } from '../lib/format';
 import type { FeedOutletContext } from '../pages/FeedPage';
 import { CloseIcon, SendIcon } from './Icons';
@@ -88,7 +88,13 @@ export default function FeedDetailModal() {
       setComments([...list, comment]);
       setTotal((t) => t + 1);
       setDraft('');
-      onCommentAdded(id, { id: comment.id, author: comment.author, body: comment.body, deleted: false });
+      onCommentAdded(id, {
+        id: comment.id,
+        author: comment.author,
+        authorRelation: comment.authorRelation,
+        body: comment.body,
+        deleted: false,
+      });
     } catch (err) {
       alert((err as Error).message);
     } finally {
@@ -175,12 +181,10 @@ export default function FeedDetailModal() {
                     </div>
                   ) : (
                     <div key={c.id} className="comment">
-                      <div className="avatar" style={{ background: avatarColor(c.author) }} aria-hidden="true">
-                        {c.author.slice(0, 1)}
-                      </div>
+                      <Avatar nickname={c.author} relation={c.authorRelation} />
                       <div className="comment-main">
                         <div className="comment-meta">
-                          <b>{c.author}</b>
+                          <PersonName nickname={c.author} relation={c.authorRelation} />
                           <span>{formatDateTime(c.createdAt, feed.date)}</span>
                         </div>
                         <span className="comment-text">{c.body}</span>

@@ -65,7 +65,8 @@ async function feedPhotos(feedId: string) {
 
 async function feedDetail(feedId: string) {
   const rs = await db.execute({
-    sql: `SELECT f.id, f.feed_date, f.body, f.created_at, f.updated_at, u.name AS author_name,
+    sql: `SELECT f.id, f.feed_date, f.body, f.created_at, f.updated_at,
+            u.nickname AS author_name, u.relation AS author_relation,
             (SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id) AS comment_count
           FROM feeds f JOIN users u ON u.id = f.author_id
           WHERE f.id = ?`,
@@ -79,6 +80,7 @@ async function feedDetail(feedId: string) {
     isToday: row.feed_date === todayKST(),
     body: String(row.body),
     author: String(row.author_name),
+    authorRelation: String(row.author_relation),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     commentCount: Number(row.comment_count),
@@ -133,11 +135,14 @@ export async function feedRoutes(app: FastifyInstance) {
     const rows = rs.rows.slice(0, limit);
     const ids = rows.map((r) => String(r.id));
 
-    const previews = new Map<string, { id: string; author: string; body: string; deleted: boolean }[]>();
+    const previews = new Map<
+      string,
+      { id: string; author: string; authorRelation: string; body: string; deleted: boolean }[]
+    >();
     if (ids.length) {
       const crs = await db.execute({
-        sql: `SELECT id, feed_id, author, body, deleted_at FROM (
-                SELECT c.id, c.feed_id, u.name AS author, c.body, c.deleted_at,
+        sql: `SELECT id, feed_id, author, author_relation, body, deleted_at FROM (
+                SELECT c.id, c.feed_id, u.nickname AS author, u.relation AS author_relation, c.body, c.deleted_at,
                   ROW_NUMBER() OVER (PARTITION BY c.feed_id ORDER BY c.created_at) AS rn
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id IN (${ids.map(() => '?').join(',')})
@@ -146,7 +151,13 @@ export async function feedRoutes(app: FastifyInstance) {
       });
       for (const c of crs.rows) {
         const list = previews.get(String(c.feed_id)) ?? [];
-        list.push({ id: String(c.id), author: String(c.author), body: String(c.body), deleted: c.deleted_at !== null });
+        list.push({
+          id: String(c.id),
+          author: String(c.author),
+          authorRelation: String(c.author_relation),
+          body: String(c.body),
+          deleted: c.deleted_at !== null,
+        });
         previews.set(String(c.feed_id), list);
       }
     }
@@ -240,7 +251,8 @@ export async function feedRoutes(app: FastifyInstance) {
     const [list, count] = await db.batch(
       [
         {
-          sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.author_id, u.name AS author
+          sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.author_id,
+                  u.nickname AS author, u.relation AS author_relation
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id = ?
                 ORDER BY c.created_at
@@ -255,6 +267,7 @@ export async function feedRoutes(app: FastifyInstance) {
       items: list.rows.map((r) => ({
         id: String(r.id),
         author: String(r.author),
+        authorRelation: String(r.author_relation),
         body: String(r.body),
         createdAt: String(r.created_at),
         deleted: r.deleted_at !== null,
@@ -292,7 +305,8 @@ export async function feedRoutes(app: FastifyInstance) {
 
     const comment = {
       id: randomUUID(),
-      author: req.currentUser!.name,
+      author: req.currentUser!.nickname,
+      authorRelation: req.currentUser!.relation,
       body,
       createdAt: nowISO(),
       deleted: false,

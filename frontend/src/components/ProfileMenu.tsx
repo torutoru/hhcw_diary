@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { avatarColor } from '../lib/avatar';
 import { LogoutIcon, UserIcon, UsersIcon } from './Icons';
+import { Avatar, PersonName } from './Person';
 
-/** 메인 피드 우측 상단 메뉴: 내 정보, 가족 구성원 관리(엄마·아빠만), 로그아웃 */
+/** 메인 피드 우측 상단 메뉴: 내 정보, 가족 구성원 관리(가족관계 엄마·아빠만), 로그아웃 */
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,14 +47,16 @@ export default function ProfileMenu() {
       {open && (
         <nav className="profile-menu" aria-label="내 메뉴">
           <div className="profile-me">
-            <div className="avatar" style={{ background: avatarColor(user.name) }} aria-hidden="true">
-              {user.name.slice(0, 1)}
-            </div>
+            <Avatar nickname={user.nickname} relation={user.relation} />
             <div className="profile-me-text">
-              <b>{user.name}</b>
+              <PersonName nickname={user.nickname} relation={user.relation} />
               <span>{user.email}</span>
             </div>
           </div>
+          <Link to="/me" className="menu-item">
+            <UserIcon size={20} />
+            내 정보
+          </Link>
           {user.role === 'parent' && (
             <Link to="/members" className="menu-item">
               <UsersIcon />

@@ -5,19 +5,24 @@ import { z } from 'zod';
 import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { conflict, forbidden, HttpError, unauthorized } from '../lib/errors.js';
-import { roleForName } from '../lib/family.js';
+import { roleForRelation } from '../lib/family.js';
 import { sendMail } from '../lib/mailer.js';
 import { formatKST, nowISO } from '../lib/time.js';
-import { clearSession, requireUser, setSession } from '../plugins/auth.js';
+import { clearSession, requireUser, setSession, toSessionUser } from '../plugins/auth.js';
 import { approvalEmail } from '../templates/approvalEmail.js';
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 승인 링크 1시간
 
+const nickname = z.string().trim().min(1, '호칭을 입력해 주세요.').max(20, '호칭은 20자 이하로 적어 주세요.');
+
 const signupBody = z.object({
   email: z.string().trim().toLowerCase().email('이메일 형식을 확인해 주세요.'),
   password: z.string().min(4, '비밀번호는 4자 이상이어야 해요.').max(100),
-  name: z.string().trim().min(1, '호칭을 입력해 주세요.').max(20, '호칭은 20자 이하로 적어 주세요.'),
+  relation: z.string().trim().min(1, '가족관계를 입력해 주세요.').max(20, '가족관계는 20자 이하로 적어 주세요.'),
+  nickname,
 });
+
+const updateMeBody = z.object({ nickname });
 
 const loginBody = z.object({
   email: z.string().trim().toLowerCase(),
@@ -25,19 +30,19 @@ const loginBody = z.object({
   remember: z.boolean().default(false),
 });
 
-async function isParentNameTaken(name: string, exceptUserId: string) {
+async function isParentRelationTaken(relation: string, exceptUserId: string) {
   const rs = await db.execute({
-    sql: "SELECT 1 FROM users WHERE name = ? AND status = 'active' AND id <> ? LIMIT 1",
-    args: [name, exceptUserId],
+    sql: "SELECT 1 FROM users WHERE relation = ? AND status = 'active' AND id <> ? LIMIT 1",
+    args: [relation, exceptUserId],
   });
   return rs.rows.length > 0;
 }
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/signup', async (req, reply) => {
-    const { email, password, name } = signupBody.parse(req.body);
+    const { email, password, relation, nickname } = signupBody.parse(req.body);
     const now = nowISO();
-    const role = roleForName(name);
+    const role = roleForRelation(relation);
 
     const existing = await db.execute({ sql: 'SELECT id, status FROM users WHERE email = ?', args: [email] });
     if (existing.rows[0]?.status === 'active') throw conflict('이미 가입된 이메일이에요.');
@@ -46,14 +51,14 @@ export async function authRoutes(app: FastifyInstance) {
     if (role === 'parent') {
       const taken = await db.execute({
         sql: `SELECT 1 FROM users u
-              WHERE u.name = ? AND u.email <> ?
+              WHERE u.relation = ? AND u.email <> ?
                 AND (u.status = 'active' OR EXISTS (
                   SELECT 1 FROM signup_tokens t
                   WHERE t.user_id = u.id AND t.used_at IS NULL AND t.expires_at > ?))
               LIMIT 1`,
-        args: [name, email, now],
+        args: [relation, email, now],
       });
-      if (taken.rows[0]) throw conflict(`'${name}' 호칭은 이미 다른 가족이 쓰고 있어요. 다른 호칭을 입력해 주세요.`);
+      if (taken.rows[0]) throw conflict(`가족관계 '${relation}'은(는) 이미 등록되어 있어요. 다른 가족관계를 입력해 주세요.`);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -62,14 +67,16 @@ export async function authRoutes(app: FastifyInstance) {
       // 승인 대기 중이거나 제거된 계정이 다시 요청하면 정보를 갱신하고 새 링크를 보낸다
       userId = String(existing.rows[0].id);
       await db.execute({
-        sql: 'UPDATE users SET password_hash = ?, name = ?, role = ?, removed_at = NULL WHERE id = ?',
-        args: [passwordHash, name, role, userId],
+        sql: `UPDATE users SET password_hash = ?, relation = ?, nickname = ?, role = ?, removed_at = NULL
+              WHERE id = ?`,
+        args: [passwordHash, relation, nickname, role, userId],
       });
     } else {
       userId = randomUUID();
       await db.execute({
-        sql: 'INSERT INTO users (id, email, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        args: [userId, email, passwordHash, name, role, now],
+        sql: `INSERT INTO users (id, email, password_hash, relation, nickname, role, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [userId, email, passwordHash, relation, nickname, role, now],
       });
     }
 
@@ -87,7 +94,8 @@ export async function authRoutes(app: FastifyInstance) {
           subject: '[우리가족] 회원가입 요청이 들어왔어요',
           html: approvalEmail({
             email,
-            name,
+            relation,
+            nickname,
             canWrite: role === 'parent',
             requestedAt: formatKST(new Date(now)),
             expiresAt: formatKST(expires),
@@ -107,7 +115,7 @@ export async function authRoutes(app: FastifyInstance) {
   // 관리자 메일의 승인 링크. 처리 후 프론트의 결과 화면으로 보낸다
   app.get<{ Params: { token: string } }>('/api/signup/confirm/:token', async (req, reply) => {
     const rs = await db.execute({
-      sql: `SELECT t.user_id, t.expires_at, t.used_at, u.email, u.name, u.role
+      sql: `SELECT t.user_id, t.expires_at, t.used_at, u.email, u.relation, u.role
             FROM signup_tokens t JOIN users u ON u.id = t.user_id
             WHERE t.token = ?`,
       args: [req.params.token],
@@ -118,7 +126,8 @@ export async function authRoutes(app: FastifyInstance) {
     if (!row) status = 'invalid';
     else if (row.used_at) status = 'used';
     else if (new Date(String(row.expires_at)).getTime() < Date.now()) status = 'expired';
-    else if (row.role === 'parent' && (await isParentNameTaken(String(row.name), String(row.user_id)))) status = 'taken';
+    else if (row.role === 'parent' && (await isParentRelationTaken(String(row.relation), String(row.user_id))))
+      status = 'taken';
     else {
       const now = nowISO();
       try {
@@ -134,7 +143,7 @@ export async function authRoutes(app: FastifyInstance) {
         );
         status = 'success';
       } catch (err) {
-        // 동시에 승인된 경우 uniq_parent_name 인덱스가 막는다
+        // 동시에 승인된 경우 uniq_parent_relation 인덱스가 막는다
         if (!String((err as Error).message).includes('UNIQUE')) throw err;
         status = 'taken';
       }
@@ -142,14 +151,14 @@ export async function authRoutes(app: FastifyInstance) {
 
     const qs = new URLSearchParams({ status });
     if (row?.email) qs.set('email', String(row.email));
-    if (row?.name) qs.set('name', String(row.name));
+    if (row?.relation) qs.set('relation', String(row.relation));
     return reply.redirect(`${config.APP_URL}/signup/confirm?${qs}`);
   });
 
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password, remember } = loginBody.parse(req.body);
     const rs = await db.execute({
-      sql: 'SELECT id, email, name, role, status, removed_at, password_hash FROM users WHERE email = ?',
+      sql: 'SELECT id, email, nickname, relation, role, status, removed_at, password_hash FROM users WHERE email = ?',
       args: [email],
     });
     const row = rs.rows[0];
@@ -160,7 +169,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (row.status !== 'active') throw forbidden('아직 관리자 승인 전이에요. 승인 후 로그인할 수 있어요.');
 
     setSession(reply, String(row.id), config.isProd, remember);
-    return { user: { id: row.id, email: row.email, name: row.name, role: row.role } };
+    return { user: toSessionUser(row) };
   });
 
   app.post('/api/auth/logout', async (_req, reply) => {
@@ -172,5 +181,12 @@ export async function authRoutes(app: FastifyInstance) {
   app.get('/api/auth/me', { preHandler: requireUser }, async (req, reply) => {
     if (req.user.rmb) setSession(reply, req.currentUser!.id, config.isProd, true);
     return { user: req.currentUser };
+  });
+
+  // 내 정보 수정: 호칭만 바꿀 수 있다 (이메일, 가족관계는 고정)
+  app.patch('/api/auth/me', { preHandler: requireUser }, async (req) => {
+    const { nickname } = updateMeBody.parse(req.body);
+    await db.execute({ sql: 'UPDATE users SET nickname = ? WHERE id = ?', args: [nickname, req.currentUser!.id] });
+    return { user: { ...req.currentUser!, nickname } };
   });
 }

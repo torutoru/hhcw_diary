@@ -100,6 +100,30 @@ textarea {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
+.input.is-readonly {
+  background: var(--bg-deep);
+  color: var(--text-muted);
+  border-color: var(--border-soft);
+}
+.input.is-readonly:focus {
+  outline: none;
+}
+/* 호칭 옆에 작게 붙는 가족관계 */
+.person-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+.relation-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.comment-line .person-name {
+  margin-right: 6px;
+}
 .input.is-error {
   border: 1.5px solid var(--danger-border);
 }
@@ -491,9 +515,6 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.comment-line b {
-  margin-right: 6px;
 }
 .muted {
   color: var(--text-muted);

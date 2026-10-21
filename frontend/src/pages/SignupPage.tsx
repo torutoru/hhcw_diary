@@ -5,7 +5,8 @@ import { BackIcon, MailIcon } from '../components/Icons';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [relation, setRelation] = useState('');
+  const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
   const [error, setError] = useState('');
@@ -13,7 +14,8 @@ export default function SignupPage() {
   const [done, setDone] = useState(false);
 
   const mismatch = password2.length > 0 && password !== password2;
-  const canSubmit = email && name.trim() && password.length >= 4 && password === password2 && !submitting;
+  const canSubmit =
+    email && relation.trim() && nickname.trim() && password.length >= 4 && password === password2 && !submitting;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -21,7 +23,7 @@ export default function SignupPage() {
     setError('');
     setSubmitting(true);
     try {
-      await api.signup(email, password, name.trim());
+      await api.signup(email, password, relation.trim(), nickname.trim());
       setDone(true);
     } catch (err) {
       setError((err as Error).message);
@@ -69,10 +71,11 @@ export default function SignupPage() {
             <p className="page-desc">요청을 보내면 관리자가 메일로 승인해요.</p>
             <div className="guide">
               <p>
-                호칭 <b>엄마</b>, <b>아빠</b>는 한 명씩만 등록할 수 있어요.
+                가족관계 <b>엄마</b>, <b>아빠</b>는 한 명씩만 등록할 수 있어요.
               </p>
-              <p>피드는 엄마, 아빠만 작성하고 수정할 수 있어요.</p>
-              <p>나머지 가족은 호칭을 자유롭게 입력하고, 피드를 보고 댓글을 남길 수 있어요.</p>
+              <p>피드 작성·수정과 구성원 관리는 엄마, 아빠만 할 수 있어요.</p>
+              <p>나머지 가족은 가족관계를 자유롭게 입력하고, 피드를 보고 댓글을 남길 수 있어요.</p>
+              <p>가족관계는 가입 후 바꿀 수 없어요. 호칭은 내 정보에서 언제든 바꿀 수 있어요.</p>
             </div>
           </div>
 
@@ -91,18 +94,32 @@ export default function SignupPage() {
               />
             </div>
             <div className="field">
-              <label htmlFor="su-name">호칭</label>
+              <label htmlFor="su-relation">가족관계</label>
               <input
-                id="su-name"
+                id="su-relation"
                 className="input"
                 type="text"
                 placeholder="예: 엄마, 아빠, 큰딸, 할머니"
                 maxLength={20}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={relation}
+                onChange={(e) => setRelation(e.target.value)}
                 required
               />
-              <span className="hint">댓글에 이 이름으로 보여요.</span>
+              <span className="hint">권한을 정하는 정보예요. 이름 옆에 작게 표시돼요.</span>
+            </div>
+            <div className="field">
+              <label htmlFor="su-nickname">호칭</label>
+              <input
+                id="su-nickname"
+                className="input"
+                type="text"
+                placeholder="예: 햇살맘, 우리집대장, 꼬맹이"
+                maxLength={20}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                required
+              />
+              <span className="hint">댓글과 화면에 이 이름으로 보여요.</span>
             </div>
             <div className="field">
               <label htmlFor="su-pw">비밀번호</label>

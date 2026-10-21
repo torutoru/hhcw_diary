@@ -7,6 +7,7 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string, remember: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  updateNickname: (nickname: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -33,7 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  const updateNickname = useCallback(async (nickname: string) => {
+    const res = await api.updateMe(nickname);
+    setUser(res.user);
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout, updateNickname }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

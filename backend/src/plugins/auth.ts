@@ -13,7 +13,10 @@ export type Role = 'parent' | 'member';
 export interface SessionUser {
   id: string;
   email: string;
-  name: string;
+  /** 호칭: 화면에 보이는 이름 */
+  nickname: string;
+  /** 가족관계: 권한 기준 */
+  relation: string;
   role: Role;
 }
 
@@ -38,15 +41,20 @@ export async function requireUser(req: FastifyRequest) {
   }
   // 승인 상태나 권한이 바뀔 수 있어 매 요청 DB에서 다시 읽는다
   const rs = await db.execute({
-    sql: "SELECT id, email, name, role FROM users WHERE id = ? AND status = 'active'",
+    sql: "SELECT id, email, nickname, relation, role FROM users WHERE id = ? AND status = 'active'",
     args: [req.user.sub],
   });
   const row = rs.rows[0];
   if (!row) throw unauthorized();
-  req.currentUser = {
+  req.currentUser = toSessionUser(row);
+}
+
+export function toSessionUser(row: Record<string, unknown>): SessionUser {
+  return {
     id: String(row.id),
     email: String(row.email),
-    name: String(row.name),
+    nickname: String(row.nickname),
+    relation: String(row.relation),
     role: row.role as Role,
   };
 }

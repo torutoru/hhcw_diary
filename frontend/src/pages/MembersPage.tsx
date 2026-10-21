@@ -5,7 +5,7 @@ import type { Member } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmSheet from '../components/ConfirmSheet';
 import { BackIcon, LockIcon } from '../components/Icons';
-import { avatarColor } from '../lib/avatar';
+import { Avatar, PersonName } from '../components/Person';
 
 const TOAST_MS = 4000;
 
@@ -49,7 +49,7 @@ export default function MembersPage() {
     try {
       await api.removeMember(pending.id);
       setMembers((list) => list.filter((m) => m.id !== pending.id));
-      showToast(`${pending.name} 님을 가족에서 제거했어요`);
+      showToast(`${pending.nickname} 님을 가족에서 제거했어요`);
       setPending(null);
     } catch (err) {
       showToast((err as Error).message);
@@ -92,12 +92,10 @@ export default function MembersPage() {
             <section className="members-section">
               <h2>나</h2>
               <div className="member-me">
-                <div className="avatar avatar-lg" style={{ background: avatarColor(me.name) }} aria-hidden="true">
-                  {me.name.slice(0, 1)}
-                </div>
+                <Avatar nickname={me.nickname} relation={me.relation} size="lg" />
                 <div className="member-text">
                   <div className="member-name">
-                    <b>{me.name}</b>
+                    <PersonName nickname={me.nickname} relation={me.relation} />
                     <span className="badge-admin">관리자</span>
                   </div>
                   <span className="member-email">{me.email}</span>
@@ -112,17 +110,15 @@ export default function MembersPage() {
               <ul className="member-list">
                 {members.map((m) => (
                   <li key={m.id} className="member-row">
-                    <div className="avatar" style={{ background: avatarColor(m.name) }} aria-hidden="true">
-                      {m.name.slice(0, 1)}
-                    </div>
+                    <Avatar nickname={m.nickname} relation={m.relation} />
                     <div className="member-text">
-                      <b>{m.name}</b>
+                      <PersonName nickname={m.nickname} relation={m.relation} />
                       <span className="member-email">{m.email}</span>
                     </div>
                     <button
                       type="button"
                       className="remove-btn"
-                      aria-label={`${m.name} 제거`}
+                      aria-label={`${m.nickname} 제거`}
                       onClick={() => setPending(m)}
                     >
                       제거
@@ -148,7 +144,7 @@ export default function MembersPage() {
 
       {pending && (
         <ConfirmSheet
-          title={`${pending.name} 님을 제거할까요?`}
+          title={`${pending.nickname}(${pending.relation}) 님을 제거할까요?`}
           confirmLabel="제거하기"
           busyLabel="제거 중…"
           busy={removing}

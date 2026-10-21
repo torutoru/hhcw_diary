@@ -3,6 +3,7 @@ import type { FeedListItem } from '../api/types';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import { formatFeedDate } from '../lib/format';
 import { PhotoIcon } from './Icons';
+import { PersonName } from './Person';
 
 export default function FeedCard({ item }: { item: FeedListItem }) {
   const more = item.commentCount - item.comments.length;
@@ -33,7 +34,7 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
             </div>
           ) : (
             <div key={c.id} className="comment-line">
-              <b>{c.author}</b>
+              <PersonName nickname={c.author} relation={c.authorRelation} />
               {c.body}
             </div>
           ),

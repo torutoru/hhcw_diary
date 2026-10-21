@@ -8,6 +8,7 @@ import ConfirmPage from './pages/ConfirmPage';
 import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
 import MembersPage from './pages/MembersPage';
+import MyInfoPage from './pages/MyInfoPage';
 import SignupPage from './pages/SignupPage';
 
 function RequireAuth({ children, parentOnly = false }: { children: ReactNode; parentOnly?: boolean }) {
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/compose/:date" element={<RequireAuth parentOnly><ComposePage /></RequireAuth>} />
         {/* 권한이 없으면 페이지 안에서 "관리자만 볼 수 있어요"를 보여준다 */}
         <Route path="/members" element={<RequireAuth><MembersPage /></RequireAuth>} />
+        <Route path="/me" element={<RequireAuth><MyInfoPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

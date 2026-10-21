@@ -3,16 +3,14 @@ export type Role = 'parent' | 'member';
 export interface User {
   id: string;
   email: string;
-  name: string;
+  /** 호칭: 화면에 보이는 이름 (내 정보에서 수정 가능) */
+  nickname: string;
+  /** 가족관계: 권한 기준. '엄마', '아빠'만 관리자 (수정 불가) */
+  relation: string;
   role: Role;
 }
 
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-}
+export type Member = User;
 
 export interface Photo {
   id: string;
@@ -33,7 +31,10 @@ export interface FeedListItem {
 
 export interface CommentPreview {
   id: string;
+  /** 작성자 호칭 */
   author: string;
+  /** 작성자 가족관계 */
+  authorRelation: string;
   body: string;
   deleted: boolean;
 }
@@ -49,6 +50,7 @@ export interface FeedDetail {
   isToday: boolean;
   body: string;
   author: string;
+  authorRelation: string;
   createdAt: string;
   updatedAt: string;
   commentCount: number;
@@ -58,6 +60,7 @@ export interface FeedDetail {
 export interface Comment {
   id: string;
   author: string;
+  authorRelation: string;
   body: string;
   createdAt: string;
   /** 작성자가 삭제한 댓글. 본문은 비어 있고 자리만 남는다 */

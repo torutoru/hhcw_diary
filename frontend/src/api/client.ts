@@ -34,8 +34,9 @@ export const api = {
   login: (email: string, password: string, remember: boolean) =>
     request<{ user: User }>('/auth/login', { method: 'POST', body: json({ email, password, remember }) }),
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
-  signup: (email: string, password: string, name: string) =>
-    request<{ ok: true }>('/auth/signup', { method: 'POST', body: json({ email, password, name }) }),
+  signup: (email: string, password: string, relation: string, nickname: string) =>
+    request<{ ok: true }>('/auth/signup', { method: 'POST', body: json({ email, password, relation, nickname }) }),
+  updateMe: (nickname: string) => request<{ user: User }>('/auth/me', { method: 'PATCH', body: json({ nickname }) }),
 
   feeds: (before?: string) =>
     request<FeedListResponse>(`/feeds${before ? `?before=${before}` : ''}`),
@@ -57,7 +58,7 @@ export const api = {
     request<{ ok: true }>(`/feeds/${feedId}/comments/${commentId}`, { method: 'DELETE' }),
 
   members: () => request<{ me: Member; members: Member[] }>('/members'),
-  removeMember: (id: string) => request<{ ok: true; name: string }>(`/members/${id}`, { method: 'DELETE' }),
+  removeMember: (id: string) => request<{ ok: true; nickname: string }>(`/members/${id}`, { method: 'DELETE' }),
 
   deleteImage: (id: string) => request<{ ok: true }>(`/images/${id}`, { method: 'DELETE' }),
   uploadImage: (file: Blob, filename: string) => {
