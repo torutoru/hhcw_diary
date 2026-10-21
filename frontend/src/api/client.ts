@@ -28,8 +28,8 @@ const json = (body: unknown) => JSON.stringify(body);
 
 export const api = {
   me: () => request<{ user: User }>('/auth/me'),
-  login: (email: string, password: string) =>
-    request<{ user: User }>('/auth/login', { method: 'POST', body: json({ email, password }) }),
+  login: (email: string, password: string, remember: boolean) =>
+    request<{ user: User }>('/auth/login', { method: 'POST', body: json({ email, password, remember }) }),
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
   signup: (email: string, password: string, name: string) =>
     request<{ ok: true }>('/auth/signup', { method: 'POST', body: json({ email, password, name }) }),

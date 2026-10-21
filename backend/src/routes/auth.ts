@@ -22,6 +22,7 @@ const signupBody = z.object({
 const loginBody = z.object({
   email: z.string().trim().toLowerCase(),
   password: z.string(),
+  remember: z.boolean().default(false),
 });
 
 async function isParentNameTaken(name: string, exceptUserId: string) {
@@ -146,7 +147,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post('/api/auth/login', async (req, reply) => {
-    const { email, password } = loginBody.parse(req.body);
+    const { email, password, remember } = loginBody.parse(req.body);
     const rs = await db.execute({
       sql: 'SELECT id, email, name, role, status, removed_at, password_hash FROM users WHERE email = ?',
       args: [email],
@@ -158,7 +159,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (row.removed_at) throw forbidden('가족에서 제거된 계정이에요. 다시 함께하려면 가입을 요청해 주세요.');
     if (row.status !== 'active') throw forbidden('아직 관리자 승인 전이에요. 승인 후 로그인할 수 있어요.');
 
-    setSession(reply, String(row.id), config.isProd);
+    setSession(reply, String(row.id), config.isProd, remember);
     return { user: { id: row.id, email: row.email, name: row.name, role: row.role } };
   });
 
@@ -167,7 +168,9 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get('/api/auth/me', { preHandler: requireUser }, async (req) => {
+  // 앱을 열 때마다 호출된다. 기억하기로 로그인했다면 만료를 다시 400일로 늘린다
+  app.get('/api/auth/me', { preHandler: requireUser }, async (req, reply) => {
+    if (req.user.rmb) setSession(reply, req.currentUser!.id, config.isProd, true);
     return { user: req.currentUser };
   });
 }

@@ -31,7 +31,19 @@ export const HomeHeartIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
-export const BackIcon = ({ size = 24, strokeWidth = 2 }: P) => (
+export const ChevronLeftIcon = ({ size = 26, strokeWidth = 2.2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M15 5l-7 7 7 7" />
+  </svg>
+);
+
+export const ChevronRightIcon = ({ size = 26, strokeWidth = 2.2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+);
+
+export const BackIcon =({ size = 24, strokeWidth = 2 }: P) => (
   <svg {...base(size, strokeWidth)}>
     <path d="M15 5l-7 7 7 7" />
   </svg>

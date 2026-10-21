@@ -2,13 +2,15 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeHeartIcon } from '../components/Icons';
+import { loadRememberedEmail, saveRememberedEmail } from '../lib/rememberLogin';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => loadRememberedEmail() ?? '');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(() => loadRememberedEmail() !== null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -17,7 +19,8 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, remember);
+      saveRememberedEmail(remember ? email.trim().toLowerCase() : null);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from && from !== '/login' ? from : '/', { replace: true });
     } catch (err) {
@@ -64,8 +67,12 @@ export default function LoginPage() {
             required
           />
         </div>
+        <label className="check">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          <span>아이디 · 로그인 상태 기억하기</span>
+        </label>
         {error && <p className="form-error" role="alert">{error}</p>}
-        <button type="submit" className="btn btn-primary" style={{ marginTop: 8 }} disabled={submitting}>
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? '로그인 중…' : '로그인'}
         </button>
         <Link to="/signup" className="btn btn-outline">

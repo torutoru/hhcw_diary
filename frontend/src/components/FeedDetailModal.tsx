@@ -5,6 +5,7 @@ import type { Comment, FeedDetail } from '../api/types';
 import { avatarColor } from '../lib/avatar';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import ConfirmSheet from './ConfirmSheet';
+import Lightbox from './Lightbox';
 import { formatDateTime, formatFullDate, formatWrittenLine } from '../lib/format';
 import type { FeedOutletContext } from '../pages/FeedPage';
 import { CloseIcon, SendIcon } from './Icons';
@@ -17,6 +18,8 @@ export default function FeedDetailModal() {
   const { onCommentAdded, onCommentDeleted } = useOutletContext<FeedOutletContext>();
   const [deleting, setDeleting] = useState<Comment | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [viewing, setViewing] = useState<number | null>(null);
+  const closeLightbox = useCallback(() => setViewing(null), []);
   const [feed, setFeed] = useState<FeedDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [total, setTotal] = useState(0);
@@ -135,7 +138,14 @@ export default function FeedDetailModal() {
                 <div className="carousel">
                   {feed.photos.map((p, i) => (
                     <div key={p.id} className="carousel-item">
-                      <img src={p.url} alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                      <button
+                        type="button"
+                        className="carousel-open"
+                        aria-label={`${i + 1}번째 사진 크게 보기`}
+                        onClick={() => setViewing(i)}
+                      >
+                        <img src={p.url} alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                      </button>
                       <span className="carousel-index">
                         {i + 1} / {feed.photos.length}
                       </span>
@@ -217,6 +227,10 @@ export default function FeedDetailModal() {
           </button>
         </form>
       </section>
+
+      {feed && viewing !== null && (
+        <Lightbox photos={feed.photos} startIndex={viewing} onClose={closeLightbox} />
+      )}
 
       {deleting && (
         <ConfirmSheet

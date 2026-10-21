@@ -3,7 +3,10 @@ import { db } from '../db/client.js';
 import { forbidden, unauthorized } from '../lib/errors.js';
 
 export const SESSION_COOKIE = 'hhcw_session';
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30일
+// "로그인 상태 기억하기": 브라우저가 허용하는 최대치(크롬 400일). 접속할 때마다 다시 늘린다
+const REMEMBER_MAX_AGE = 60 * 60 * 24 * 400;
+// 기억하지 않으면 브라우저를 닫을 때까지, 길어도 하루
+const SESSION_ONLY_MAX_AGE = 60 * 60 * 24;
 
 export type Role = 'parent' | 'member';
 
@@ -16,8 +19,8 @@ export interface SessionUser {
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { sub: string };
-    user: { sub: string };
+    payload: { sub: string; rmb?: boolean };
+    user: { sub: string; rmb?: boolean };
   }
 }
 
@@ -53,14 +56,16 @@ export async function requireParent(req: FastifyRequest) {
   if (req.currentUser!.role !== 'parent') throw forbidden('피드는 엄마, 아빠만 작성하고 수정할 수 있어요.');
 }
 
-export function setSession(reply: FastifyReply, userId: string, secure: boolean) {
-  const token = reply.server.jwt.sign({ sub: userId }, { expiresIn: SESSION_MAX_AGE });
+export function setSession(reply: FastifyReply, userId: string, secure: boolean, remember: boolean) {
+  const maxAge = remember ? REMEMBER_MAX_AGE : SESSION_ONLY_MAX_AGE;
+  const token = reply.server.jwt.sign({ sub: userId, rmb: remember }, { expiresIn: maxAge });
   reply.setCookie(SESSION_COOKIE, token, {
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
     secure,
-    maxAge: SESSION_MAX_AGE,
+    // maxAge 가 없으면 브라우저를 닫을 때 지워지는 세션 쿠키
+    ...(remember ? { maxAge } : {}),
   });
 }
 
