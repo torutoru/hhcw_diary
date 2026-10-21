@@ -14,6 +14,9 @@ import { memberRoutes } from './routes/members.js';
 export async function buildApp() {
   const app = Fastify({
     logger: true,
+    // 요청마다 남는 "incoming request" / "request completed" 로그를 끈다.
+    // Render 헬스체크(/api/health)가 수 초마다 와서 로그가 쌓인다. 오류는 setErrorHandler 에서 따로 남긴다
+    disableRequestLogging: true,
     // Netlify 프록시 뒤에서 동작
     trustProxy: true,
   });

@@ -20,7 +20,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(0, '네트워크에 연결할 수 없어요.');
   }
   const data = res.headers.get('content-type')?.includes('application/json') ? await res.json() : null;
-  if (!res.ok) throw new ApiError(res.status, data?.error ?? '요청을 처리하지 못했어요.');
+  if (!res.ok) {
+    // JSON 이 아니면 백엔드까지 가지 못한 것 (프록시 주소 오류, 서버 기동 중 등). 원인 파악용으로 상태 코드를 붙인다
+    throw new ApiError(res.status, data?.error ?? `서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요. (${res.status})`);
+  }
   return data as T;
 }
 

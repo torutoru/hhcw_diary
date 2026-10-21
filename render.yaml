@@ -1,7 +1,7 @@
 # Render Blueprint: backend 폴더를 Node 웹 서비스로 배포
 services:
   - type: web
-    name: hhcw-diary-api
+    name: hhcw-diary
     runtime: node
     rootDir: backend
     region: singapore

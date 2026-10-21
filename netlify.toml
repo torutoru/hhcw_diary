@@ -8,10 +8,9 @@
   NODE_VERSION = "22"
 
 # API 요청은 Render 백엔드로 프록시한다 (같은 도메인이라 로그인 쿠키가 1st-party 로 동작)
-# TODO: Render 서비스 주소로 바꾸기
 [[redirects]]
   from = "/api/*"
-  to = "https://hhcw-diary-api.onrender.com/api/:splat"
+  to = "https://hhcw-diary.onrender.com/api/:splat"
   status = 200
   force = true
 
