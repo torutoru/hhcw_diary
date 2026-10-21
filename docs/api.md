@@ -34,8 +34,29 @@ FeedDetail   = { id, date, isToday, body, author, createdAt, updatedAt, commentC
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| GET | `/feeds/:id/comments?offset=0&limit=5` 🔒 | 오래된 순. `{ items: { id, author, body, createdAt }[], total }` |
+| GET | `/feeds/:id/comments?offset=0&limit=5` 🔒 | 오래된 순. `{ items: Comment[], total }`. 삭제된 댓글도 자리를 지키며 포함됨 |
 | POST | `/feeds/:id/comments` 🔒 | `{ body }` (1~500자) → `{ comment }` |
+| DELETE | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 삭제 → `{ ok }`. 남의 댓글은 403, 이미 삭제됐거나 없으면 404 |
+
+```ts
+Comment = { id, author, body, createdAt, deleted /* 삭제됨이면 body 는 "" */, mine /* 내 댓글 */ }
+```
+
+- 삭제는 본문을 비우고 `deleted_at` 을 기록합니다 (행은 남김). 화면에는 그 자리에 "작성자의 요청으로 댓글이 삭제되었습니다"가 표시됩니다.
+- `total`, 피드 목록의 `commentCount` 는 삭제된 자리까지 포함한 수입니다. 피드 목록의 `comments` 미리보기 항목에도 `id`, `deleted` 가 있습니다.
+
+## 가족 구성원 관리 (👪 엄마·아빠만)
+
+| 메서드 | 경로 | 설명 |
+| --- | --- | --- |
+| GET | `/members` 👪 | `{ me: Member, members: Member[] }`. `members` 는 나를 뺀 승인된 구성원 (승인 순) |
+| DELETE | `/members/:id` 👪 | 구성원 제거(탈퇴 처리) → `{ ok, name }`. 나 자신은 400, 이미 제거됐거나 없으면 404 |
+
+```ts
+Member = { id, name, email, role }
+```
+
+제거된 계정은 바로 세션이 끊기고, 로그인하면 403("가족에서 제거된 계정이에요")을 받습니다. 다시 가입 요청을 보내 관리자 승인을 받으면 돌아올 수 있습니다.
 
 ## 이미지
 

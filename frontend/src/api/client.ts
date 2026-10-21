@@ -1,4 +1,4 @@
-import type { Comment, FeedDetail, FeedListResponse, UploadedImage, User } from './types';
+import type { Comment, FeedDetail, FeedListResponse, Member, UploadedImage, User } from './types';
 
 export class ApiError extends Error {
   constructor(
@@ -47,6 +47,11 @@ export const api = {
     request<{ items: Comment[]; total: number }>(`/feeds/${feedId}/comments?offset=${offset}&limit=${limit}`),
   addComment: (feedId: string, body: string) =>
     request<{ comment: Comment }>(`/feeds/${feedId}/comments`, { method: 'POST', body: json({ body }) }),
+  deleteComment: (feedId: string, commentId: string) =>
+    request<{ ok: true }>(`/feeds/${feedId}/comments/${commentId}`, { method: 'DELETE' }),
+
+  members: () => request<{ me: Member; members: Member[] }>('/members'),
+  removeMember: (id: string) => request<{ ok: true; name: string }>(`/members/${id}`, { method: 'DELETE' }),
 
   uploadImage: (file: Blob, filename: string) => {
     const form = new FormData();

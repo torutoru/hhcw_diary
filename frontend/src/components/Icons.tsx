@@ -44,7 +44,29 @@ export const UserIcon = ({ size = 24, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
-export const PlusIcon = ({ size = 20, strokeWidth = 2.2 }: P) => (
+export const UsersIcon = ({ size = 20, strokeWidth = 1.8 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5" />
+    <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .6 3.2 2.2 3.5 5" />
+  </svg>
+);
+
+export const LogoutIcon = ({ size = 20, strokeWidth = 1.8 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+    <path d="M10 8l-4 4 4 4M6 12h10" />
+  </svg>
+);
+
+export const LockIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+
+export const PlusIcon =({ size = 20, strokeWidth = 2.2 }: P) => (
   <svg {...base(size, strokeWidth)}>
     <path d="M12 5v14M5 12h14" />
   </svg>

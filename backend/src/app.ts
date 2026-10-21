@@ -9,6 +9,7 @@ import { SESSION_COOKIE } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { feedRoutes } from './routes/feeds.js';
 import { imageRoutes } from './routes/images.js';
+import { memberRoutes } from './routes/members.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -46,6 +47,7 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(feedRoutes);
   await app.register(imageRoutes);
+  await app.register(memberRoutes);
 
   return app;
 }

@@ -344,34 +344,66 @@ textarea {
 .profile {
   position: relative;
 }
-.profile .icon-btn {
+.profile-btn {
   border-radius: 50%;
+}
+.profile-btn.is-open {
+  background: var(--border-soft);
 }
 .profile-menu {
   position: absolute;
   right: 0;
-  top: 50px;
-  min-width: 200px;
+  top: 52px;
+  width: 236px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 12px 32px rgba(29, 38, 32, 0.16);
+}
+.profile-me {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  box-shadow: 0 8px 24px rgba(29, 38, 32, 0.12);
+  padding: 10px 10px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--divider);
 }
-.profile-menu strong {
-  font-size: 15px;
+.profile-me-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-.profile-menu span {
-  font-size: 13px;
+.profile-me-text b {
+  font-size: 14px;
+}
+.profile-me-text span {
+  font-size: 12px;
   color: var(--text-muted);
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.profile-menu .btn {
-  height: 44px;
+.menu-item {
+  height: 46px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+.menu-item:hover {
+  background: var(--bg);
+  color: var(--text);
 }
 
 .feed-main {
@@ -623,6 +655,40 @@ textarea {
   line-height: 1.55;
   word-break: break-word;
 }
+.comment-main {
+  flex: 1;
+}
+.comment-remove {
+  align-self: center;
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid #e2b9ac;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.comment-remove:hover {
+  background: var(--danger-soft);
+}
+.comment.is-deleted {
+  align-items: center;
+}
+.comment.is-deleted .avatar {
+  background: var(--border-soft);
+}
+.comment.is-deleted .comment-text,
+.comment-line.is-deleted {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+/* 상세 모달 위에 확인 시트가 뜬다 */
+.modal-root .sheet-root {
+  z-index: 55;
+}
 .more-btn {
   height: 44px;
   border: 1px solid var(--border);
@@ -839,6 +905,247 @@ textarea {
 }
 .compose .btn {
   margin-top: auto;
+}
+
+/* ---------- 가족 구성원 관리 ---------- */
+.members-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.sub-header {
+  height: 60px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.sub-header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+.members {
+  flex: 1;
+  padding: 20px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.members-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.members-section h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.member-me {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--primary);
+  border-radius: 18px;
+}
+.avatar-lg {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  font-size: 16px;
+}
+.member-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.member-text b {
+  font-size: 15px;
+}
+.member-me .member-text b {
+  font-size: 16px;
+}
+.member-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.member-email {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.member-me .member-email {
+  font-size: 14px;
+}
+.badge-admin {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+}
+.member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+}
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+}
+.member-row + .member-row {
+  border-top: 1px solid var(--divider);
+}
+.member-row .avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  font-size: 15px;
+}
+.remove-btn {
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid #e2b9ac;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.remove-btn:hover {
+  background: var(--danger-soft);
+}
+.member-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.members-note {
+  margin: 0;
+  padding: 0 4px;
+  line-height: 1.6;
+}
+
+.no-access {
+  padding-top: 120px;
+  gap: 16px;
+}
+.no-access h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.result-icon.is-locked {
+  width: 80px;
+  height: 80px;
+  background: var(--border-soft);
+  color: #3e4a42;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: calc(var(--app-width) - 32px);
+  z-index: 60;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--text);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.toast button {
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 아래에서 올라오는 확인 시트 */
+.sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+.sheet {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-width);
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sheet h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.sheet p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.sheet-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.sheet-actions button {
+  flex: 1;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.sheet-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sheet-cancel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+}
+.sheet-danger {
+  border: 0;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
 }
 
 .center-loading {

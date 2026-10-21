@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>가족 구성원 관리</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#234F3B}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column">
+  <header style="height: 60px; padding: 0 8px; display: flex; align-items: center; gap: 4px; border-bottom: 1px solid #E4E1D8">
+    <a href="Feed.dc.html" aria-label="피드로 돌아가기" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #1D2620; border-radius: 12px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 400">가족 구성원 관리</h1>
+  </header>
+
+  <sc-if value="{{isAdmin}}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; overflow-y: auto; padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 22px">
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; color: #5E665F">나</h2>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #FFFFFF; border: 1.5px solid #2F6B4F; border-radius: 18px">
+          <div style="width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; background: #CFE3D6; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700">아</div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: flex; align-items: center; gap: 6px">
+              <b style="font-size: 16px">아빠</b>
+              <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #2F6B4F; color: #FFFFFF">관리자</span>
+            </div>
+            <span style="font-size: 14px; color: #5E665F; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">dad@example.com</span>
+          </div>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 700; color: #5E665F">가족 구성원 {{count}}명</h2>
+        <div style="background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 18px; display: flex; flex-direction: column">
+          <sc-for list="{{members}}" as="m" hint-placeholder-count="5">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; border-top: {{m.border}}">
+              <div style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; background: {{m.bg}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700">{{m.initial}}</div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <b style="font-size: 15px">{{m.name}}</b>
+                <span style="font-size: 13px; color: #5E665F; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{m.email}}</span>
+              </div>
+              <button type="button" onClick="{{m.ask}}" style="height: 40px; padding: 0 14px; border: 1.5px solid #E2B9AC; border-radius: 12px; background: #FFFFFF; color: #A3361F; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer">제거</button>
+            </div>
+          </sc-for>
+          <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; padding: 28px 16px; text-align: center; font-size: 14px; color: #5E665F">아직 다른 가족 구성원이 없어요.</p>
+          </sc-if>
+        </div>
+        <p style="margin: 0; padding: 0 4px; font-size: 13px; line-height: 1.6; color: #5E665F">제거하면 해당 계정은 탈퇴 처리되어 더 이상 로그인할 수 없어요.</p>
+      </section>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{noAccess}}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; padding: 120px 24px 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: #E4E1D8; display: flex; align-items: center; justify-content: center">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3E4A42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+      </div>
+      <h2 style="margin: 0; font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 24px; font-weight: 400">관리자만 볼 수 있어요</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #5E665F">가족 구성원 관리는 관리자 권한이 필요해요.</p>
+      <a href="Feed.dc.html" style="margin-top: auto; width: 100%; height: 54px; border-radius: 14px; background: #2F6B4F; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">피드로 돌아가기</a>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showToast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 28px; padding: 14px 16px; border-radius: 14px; background: #1D2620; color: #FFFFFF; font-size: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+      <span>{{toast}}</span>
+      <button type="button" onClick="{{closeToast}}" style="height: 32px; padding: 0 8px; border: 0; background: transparent; color: #F2C14E; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer">닫기</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showConfirm}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+      <button type="button" onClick="{{cancel}}" aria-label="취소" style="position: absolute; inset: 0; border: 0; padding: 0; background: rgba(12, 16, 13, 0.6); cursor: pointer"></button>
+      <div role="dialog" aria-label="구성원 제거 확인" style="position: relative; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 28px 20px 28px; display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 22px; font-weight: 400">{{confirmTitle}}</h2>
+        <p style="margin: 0; font-size: 15px; line-height: 1.65; color: #5E665F">{{confirmEmail}} 계정을 탈퇴 처리해요.<br>탈퇴하면 더 이상 로그인할 수 없고, 되돌릴 수 없어요.</p>
+        <div style="display: flex; gap: 10px; margin-top: 8px">
+          <button type="button" onClick="{{cancel}}" style="flex: 1; height: 52px; border: 1px solid #D8D4C8; border-radius: 14px; background: #FFFFFF; color: #1D2620; font-size: 16px; font-weight: 500; font-family: inherit; cursor: pointer">취소</button>
+          <button type="button" onClick="{{confirmRemove}}" style="flex: 1; height: 52px; border: 0; border-radius: 14px; background: #A3361F; color: #FFFFFF; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer">제거하기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"isAdmin":{"editor":"boolean","default":true,"section":"보기"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      pending: null,
+      toast: '',
+      members: [
+        { id: 'm1', name: '엄마', email: 'mom@example.com', bg: '#F4D3C4' },
+        { id: 'm2', name: '큰딸', email: 'daughter@example.com', bg: '#E3DCF2' },
+        { id: 'm3', name: '막내', email: 'youngest@example.com', bg: '#F7E7A9' },
+        { id: 'm4', name: '할머니', email: 'grandma@example.com', bg: '#F2D9A6' },
+        { id: 'm5', name: '할아버지', email: 'grandpa@example.com', bg: '#D9E4F2' }
+      ]
+    };
+  }
+  renderVals() {
+    const isAdmin = this.props.isAdmin ?? true;
+    const list = this.state.members;
+    const pending = list.find((m) => m.id === this.state.pending);
+    return {
+      isAdmin,
+      noAccess: !isAdmin,
+      count: list.length,
+      isEmpty: list.length === 0,
+      members: list.map((m, i) => ({
+        ...m,
+        initial: m.name.slice(0, 1),
+        border: i === 0 ? '0' : '1px solid #EEEBE3',
+        ask: () => this.setState({ pending: m.id })
+      })),
+      showConfirm: isAdmin && !!pending,
+      confirmTitle: pending ? pending.name + ' 님을 제거할까요?' : '',
+      confirmEmail: pending ? pending.email : '',
+      cancel: () => this.setState({ pending: null }),
+      confirmRemove: () => {
+        if (!pending) return;
+        this.setState({
+          members: list.filter((m) => m.id !== pending.id),
+          pending: null,
+          toast: pending.name + ' 님을 가족에서 제거했어요'
+        });
+      },
+      showToast: isAdmin && !!this.state.toast,
+      toast: this.state.toast,
+      closeToast: () => this.setState({ toast: '' })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { FeedListItem } from '../api/types';
+import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import { formatFeedDate } from '../lib/format';
 import { PhotoIcon } from './Icons';
 
@@ -25,12 +26,18 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
       )}
 
       <div className="feed-card-comments">
-        {item.comments.map((c, i) => (
-          <div key={i} className="comment-line">
-            <b>{c.author}</b>
-            {c.body}
-          </div>
-        ))}
+        {item.comments.map((c) =>
+          c.deleted ? (
+            <div key={c.id} className="comment-line is-deleted">
+              {DELETED_COMMENT_TEXT}
+            </div>
+          ) : (
+            <div key={c.id} className="comment-line">
+              <b>{c.author}</b>
+              {c.body}
+            </div>
+          ),
+        )}
         {more > 0 && <span className="muted">댓글 {more}개 더보기</span>}
         {item.commentCount === 0 && <span className="muted">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</span>}
       </div>

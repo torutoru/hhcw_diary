@@ -15,16 +15,37 @@ a{color:#2F6B4F}a:hover{color:#234F3B}
 </style>
 </helmet>
 <div style="width: 390px; height: 1660px; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column">
-  <header style="height: 60px; padding: 0 12px 0 20px; display: flex; align-items: center; justify-content: space-between; background: #F4F2EC; border-bottom: 1px solid #E4E1D8">
+  <header style="position: relative; z-index: 5; height: 60px; padding: 0 12px 0 20px; display: flex; align-items: center; justify-content: space-between; background: #F4F2EC; border-bottom: 1px solid #E4E1D8">
     <div style="display: flex; align-items: center; gap: 10px">
       <div style="width: 32px; height: 32px; border-radius: 10px; background: #2F6B4F; display: flex; align-items: center; justify-content: center">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg>
       </div>
       <span style="font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 21px">우리가족</span>
     </div>
-    <a href="Main.dc.html" aria-label="내 정보 · 로그아웃" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1D2620">
+    <button type="button" onClick="{{toggleMenu}}" aria-label="내 메뉴 열기" style="width: 44px; height: 44px; border: 0; padding: 0; border-radius: 50%; background: {{iconBg}}; display: flex; align-items: center; justify-content: center; color: #1D2620; cursor: pointer">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>
-    </a>
+    </button>
+    <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ true }}">
+      <nav aria-label="내 메뉴" style="position: absolute; top: 56px; right: 12px; width: 236px; background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 18px; box-shadow: 0 12px 32px rgba(29, 38, 32, 0.16); padding: 8px; display: flex; flex-direction: column">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 10px 12px; border-bottom: 1px solid #EEEBE3; margin-bottom: 6px">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: #CFE3D6; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">아</div>
+          <div style="display: flex; flex-direction: column; min-width: 0">
+            <b style="font-size: 14px">아빠</b>
+            <span style="font-size: 12px; color: #5E665F; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">dad@example.com</span>
+          </div>
+        </div>
+        <sc-if value="{{isAdmin}}" hint-placeholder-val="{{ true }}">
+          <a href="Members.dc.html" style="height: 46px; padding: 0 10px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #1D2620; text-decoration: none">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .6 3.2 2.2 3.5 5"></path></svg>
+            가족 구성원 관리
+          </a>
+        </sc-if>
+        <a href="Main.dc.html" style="height: 46px; padding: 0 10px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #1D2620; text-decoration: none">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path><path d="M10 8l-4 4 4 4M6 12h10"></path></svg>
+          로그아웃
+        </a>
+      </nav>
+    </sc-if>
   </header>
 
   <main style="padding: 16px; display: flex; flex-direction: column; gap: 16px">
@@ -75,9 +96,14 @@ a{color:#2F6B4F}a:hover{color:#234F3B}
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"viewer":{"editor":"enum","options":["parent","member"],"default":"parent","section":"보기"},"todayPosted":{"editor":"boolean","default":true,"section":"보기"},"$preview":{"width":390,"height":1660}}'>
+<script type="text/x-dc" data-dc-script data-props='{"viewer":{"editor":"enum","options":["parent","member"],"default":"parent","section":"보기"},"todayPosted":{"editor":"boolean","default":true,"section":"보기"},"isAdmin":{"editor":"boolean","default":true,"section":"보기"},"menuOpen":{"editor":"boolean","default":true,"section":"보기"},"$preview":{"width":390,"height":1660}}'>
 class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { menu: null };
+  }
   renderVals() {
+    const menuOpen = this.state.menu ?? (this.props.menuOpen ?? true);
     const viewer = this.props.viewer ?? 'parent';
     const todayPosted = this.props.todayPosted ?? true;
     const isParent = viewer === 'parent';
@@ -103,7 +129,11 @@ class Component extends DCLogic {
     return {
       showWrite: isParent && !todayPosted,
       showEdit: isParent && todayPosted,
-      feeds
+      feeds,
+      menuOpen,
+      isAdmin: this.props.isAdmin ?? true,
+      iconBg: menuOpen ? '#E4E1D8' : 'transparent',
+      toggleMenu: () => this.setState({ menu: !menuOpen })
     };
   }
 }

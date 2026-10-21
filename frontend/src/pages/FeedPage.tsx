@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import { api } from '../api/client';
-import type { FeedListItem } from '../api/types';
+import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
-import { HomeIcon, PencilIcon, PlusIcon, UserIcon } from '../components/Icons';
 import FeedCard from '../components/FeedCard';
+import { HomeIcon, PencilIcon, PlusIcon } from '../components/Icons';
+import ProfileMenu from '../components/ProfileMenu';
 
 export interface FeedOutletContext {
-  onCommentAdded: (feedId: string, comment: { author: string; body: string }) => void;
+  onCommentAdded: (feedId: string, comment: CommentPreview) => void;
+  onCommentDeleted: (feedId: string, commentId: string) => void;
 }
 
 export default function FeedPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [items, setItems] = useState<FeedListItem[]>([]);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
@@ -67,10 +67,16 @@ export default function FeedPage() {
     );
   }, []);
 
-  async function onLogout() {
-    await logout();
-    navigate('/login', { replace: true });
-  }
+  // 삭제된 댓글은 미리보기에서도 안내 문구로 바뀐다 (자리와 댓글 수는 그대로)
+  const onCommentDeleted = useCallback<FeedOutletContext['onCommentDeleted']>((feedId, commentId) => {
+    setItems((prev) =>
+      prev.map((f) =>
+        f.id === feedId
+          ? { ...f, comments: f.comments.map((c) => (c.id === commentId ? { ...c, body: '', deleted: true } : c)) }
+          : f,
+      ),
+    );
+  }, []);
 
   const isParent = user?.role === 'parent';
   const todayPosted = items[0]?.isToday ?? false;
@@ -84,26 +90,7 @@ export default function FeedPage() {
           </span>
           우리가족
         </div>
-        <div className="profile">
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="내 정보 · 로그아웃"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <UserIcon />
-          </button>
-          {menuOpen && (
-            <div className="profile-menu">
-              <strong>{user?.name}</strong>
-              <span>{user?.email}</span>
-              <button type="button" className="btn btn-outline" onClick={onLogout}>
-                로그아웃
-              </button>
-            </div>
-          )}
-        </div>
+        <ProfileMenu />
       </header>
 
       <main className="feed-main">
@@ -142,7 +129,7 @@ export default function FeedPage() {
         <div ref={sentinel} />
       </main>
 
-      <Outlet context={{ onCommentAdded } satisfies FeedOutletContext} />
+      <Outlet context={{ onCommentAdded, onCommentDeleted } satisfies FeedOutletContext} />
     </>
   );
 }

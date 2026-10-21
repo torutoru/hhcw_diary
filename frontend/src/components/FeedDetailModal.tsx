@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Comment, FeedDetail } from '../api/types';
 import { avatarColor } from '../lib/avatar';
+import { DELETED_COMMENT_TEXT } from '../lib/comments';
+import ConfirmSheet from './ConfirmSheet';
 import { formatDateTime, formatFullDate, formatWrittenLine } from '../lib/format';
 import type { FeedOutletContext } from '../pages/FeedPage';
 import { CloseIcon, SendIcon } from './Icons';
@@ -12,7 +14,9 @@ const PAGE = 5;
 export default function FeedDetailModal() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { onCommentAdded } = useOutletContext<FeedOutletContext>();
+  const { onCommentAdded, onCommentDeleted } = useOutletContext<FeedOutletContext>();
+  const [deleting, setDeleting] = useState<Comment | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [feed, setFeed] = useState<FeedDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [total, setTotal] = useState(0);
@@ -81,11 +85,28 @@ export default function FeedDetailModal() {
       setComments([...list, comment]);
       setTotal((t) => t + 1);
       setDraft('');
-      onCommentAdded(id, { author: comment.author, body: comment.body });
+      onCommentAdded(id, { id: comment.id, author: comment.author, body: comment.body, deleted: false });
     } catch (err) {
       alert((err as Error).message);
     } finally {
       setSending(false);
+    }
+  }
+
+  const closeSheet = useCallback(() => setDeleting(null), []);
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    try {
+      await api.deleteComment(id, deleting.id);
+      setComments((list) => list.map((c) => (c.id === deleting.id ? { ...c, body: '', deleted: true } : c)));
+      onCommentDeleted(id, deleting.id);
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setDeleteBusy(false);
+      setDeleting(null);
     }
   }
 
@@ -136,20 +157,37 @@ export default function FeedDetailModal() {
                 <h3>
                   댓글 <span>{total}</span>
                 </h3>
-                {comments.map((c) => (
-                  <div key={c.id} className="comment">
-                    <div className="avatar" style={{ background: avatarColor(c.author) }} aria-hidden="true">
-                      {c.author.slice(0, 1)}
+                {comments.map((c) =>
+                  c.deleted ? (
+                    <div key={c.id} className="comment is-deleted">
+                      <div className="avatar" aria-hidden="true" />
+                      <span className="comment-text">{DELETED_COMMENT_TEXT}</span>
                     </div>
-                    <div className="comment-main">
-                      <div className="comment-meta">
-                        <b>{c.author}</b>
-                        <span>{formatDateTime(c.createdAt, feed.date)}</span>
+                  ) : (
+                    <div key={c.id} className="comment">
+                      <div className="avatar" style={{ background: avatarColor(c.author) }} aria-hidden="true">
+                        {c.author.slice(0, 1)}
                       </div>
-                      <span className="comment-text">{c.body}</span>
+                      <div className="comment-main">
+                        <div className="comment-meta">
+                          <b>{c.author}</b>
+                          <span>{formatDateTime(c.createdAt, feed.date)}</span>
+                        </div>
+                        <span className="comment-text">{c.body}</span>
+                      </div>
+                      {c.mine && (
+                        <button
+                          type="button"
+                          className="comment-remove"
+                          aria-label="내 댓글 제거"
+                          onClick={() => setDeleting(c)}
+                        >
+                          제거
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
                 {left > 0 && (
                   <button type="button" className="more-btn" onClick={loadMore} disabled={loadingMore}>
                     댓글 더보기 ({Math.min(PAGE, left)}개 / 남은 {left}개)
@@ -179,6 +217,21 @@ export default function FeedDetailModal() {
           </button>
         </form>
       </section>
+
+      {deleting && (
+        <ConfirmSheet
+          title="댓글을 삭제할까요?"
+          confirmLabel="삭제하기"
+          busyLabel="삭제 중…"
+          busy={deleteBusy}
+          onConfirm={confirmDelete}
+          onCancel={closeSheet}
+        >
+          삭제하면 되돌릴 수 없어요.
+          <br />
+          댓글 자리에는 "{DELETED_COMMENT_TEXT}"라고 표시돼요.
+        </ConfirmSheet>
+      )}
     </div>
   );
 }

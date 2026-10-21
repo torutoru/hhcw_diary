@@ -63,8 +63,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_parent_name ON users(name)
   WHERE status = 'active' AND name IN (${parentNames});
 `;
 
+/**
+ * 컬럼 추가는 이미 만들어진 DB(Turso)에도 적용되도록 없을 때만 ALTER 한다.
+ * - users.removed_at: 가족 구성원 관리에서 제거된 시각. 제거되면 status 를 'pending' 으로 돌려
+ *   로그인·세션을 막고, '엄마'/'아빠' 자리도 비운다. 행은 남겨서 지난 댓글의 이름을 유지한다.
+ * - comments.deleted_at: 작성자가 지운 시각. 본문은 비우고 행은 남겨 목록에 안내 문구를 보여준다.
+ */
+async function addColumnIfMissing(table: string, column: string, type: string) {
+  const cols = await db.execute(`PRAGMA table_info(${table})`);
+  if (!cols.rows.some((c) => c.name === column)) {
+    await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+}
+
+async function addMissingColumns() {
+  await addColumnIfMissing('users', 'removed_at', 'TEXT');
+  await addColumnIfMissing('comments', 'deleted_at', 'TEXT');
+}
+
 export async function migrate(log: (msg: string) => void) {
   await db.executeMultiple(schema);
+  await addMissingColumns();
   try {
     await db.executeMultiple(roleRules);
   } catch (err) {

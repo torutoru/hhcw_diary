@@ -7,6 +7,13 @@ export interface User {
   role: Role;
 }
 
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+}
+
 export interface Photo {
   id: string;
   url: string;
@@ -21,7 +28,14 @@ export interface FeedListItem {
   coverUrl: string | null;
   photoCount: number;
   commentCount: number;
-  comments: { author: string; body: string }[];
+  comments: CommentPreview[];
+}
+
+export interface CommentPreview {
+  id: string;
+  author: string;
+  body: string;
+  deleted: boolean;
 }
 
 export interface FeedListResponse {
@@ -46,6 +60,10 @@ export interface Comment {
   author: string;
   body: string;
   createdAt: string;
+  /** 작성자가 삭제한 댓글. 본문은 비어 있고 자리만 남는다 */
+  deleted: boolean;
+  /** 내가 쓴 댓글 (삭제 버튼 표시) */
+  mine: boolean;
 }
 
 export interface UploadedImage extends Photo {

@@ -48,17 +48,28 @@
   3. DB: `uniq_parent_name` 부분 고유 인덱스 (`status = 'active'` 이고 호칭이 엄마/아빠인 행)
 - 서버 시작 시 기존 사용자의 `role` 도 호칭 기준으로 다시 맞춥니다.
 
+### 구성원 제거 (탈퇴 처리)
+
+- 엄마·아빠는 가족 구성원 관리 화면에서 다른 구성원을 제거할 수 있습니다. 자기 자신은 제거할 수 없습니다.
+- 행을 지우지 않고 `removed_at` 을 기록하고 `status` 를 `pending` 으로 돌립니다 (soft delete).
+  - 매 요청 `status = 'active'` 를 확인하므로 세션이 바로 끊깁니다.
+  - 남은 승인 링크는 사용 처리해서 다시 들어올 수 없습니다.
+  - 지난 피드·댓글은 원래 호칭 그대로 남습니다.
+  - 제거된 '엄마'/'아빠' 자리는 비어서 새로 등록할 수 있습니다.
+- 제거된 사람이 다시 가입을 요청하면 `removed_at` 이 지워지고, 일반 가입처럼 관리자 승인을 받습니다.
+- `removed_at` 컬럼은 이미 만들어진 DB에도 서버 시작 시 자동으로 추가됩니다.
+
 ## DB 스키마 (Turso / libSQL)
 
 스키마는 [backend/src/db/migrate.ts](../backend/src/db/migrate.ts) 에 있고, 서버 시작 시 `CREATE TABLE IF NOT EXISTS` 로 적용됩니다.
 
 | 테이블 | 주요 컬럼 |
 | --- | --- |
-| `users` | `email`(unique), `password_hash`, `name`(호칭), `role`, `status`(pending/active) |
+| `users` | `email`(unique), `password_hash`, `name`(호칭), `role`, `status`(pending/active), `removed_at`(제거 시각) |
 | `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
 | `images` | `storage_key`(R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
-| `comments` | `feed_id`, `author_id`, `body` |
+| `comments` | `feed_id`, `author_id`, `body`, `deleted_at`(작성자가 삭제한 시각, 본문은 비움) |
 
 - 이미지 파일은 R2에만 있고, DB에는 **R2 키(`images/2026-10/<uuid>.webp`)만** 저장합니다.
 - 화면에 줄 URL은 API가 응답할 때 키로 만듭니다 (아래 참고).
@@ -96,5 +107,5 @@
 
 - 메일 보안 검사기가 링크를 미리 열면(일부 회사 메일의 링크 검사) 승인 링크가 먼저 사용될 수 있습니다. 개인 메일(Gmail 등)에서는 문제가 없지만, 생기면 "승인하기" 버튼이 있는 확인 화면을 한 단계 두는 방식으로 바꿀 수 있습니다.
 - 로그인·가입 요청 횟수 제한(rate limit)이 아직 없습니다.
-- 비밀번호 변경·찾기, 호칭 변경, 댓글 삭제 기능이 없습니다 (시안에 없음).
+- 비밀번호 변경·찾기, 호칭 변경 기능이 없습니다 (시안에 없음).
 - Render 무료 플랜은 15분 동안 요청이 없으면 잠들어서, 첫 요청이 30초 이상 걸릴 수 있습니다.

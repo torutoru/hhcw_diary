@@ -58,10 +58,10 @@ export async function authRoutes(app: FastifyInstance) {
     const passwordHash = await bcrypt.hash(password, 10);
     let userId: string;
     if (existing.rows[0]) {
-      // 승인 대기 중에 다시 요청하면 정보를 갱신하고 새 링크를 보낸다
+      // 승인 대기 중이거나 제거된 계정이 다시 요청하면 정보를 갱신하고 새 링크를 보낸다
       userId = String(existing.rows[0].id);
       await db.execute({
-        sql: 'UPDATE users SET password_hash = ?, name = ?, role = ? WHERE id = ?',
+        sql: 'UPDATE users SET password_hash = ?, name = ?, role = ?, removed_at = NULL WHERE id = ?',
         args: [passwordHash, name, role, userId],
       });
     } else {
@@ -148,13 +148,14 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password } = loginBody.parse(req.body);
     const rs = await db.execute({
-      sql: 'SELECT id, email, name, role, status, password_hash FROM users WHERE email = ?',
+      sql: 'SELECT id, email, name, role, status, removed_at, password_hash FROM users WHERE email = ?',
       args: [email],
     });
     const row = rs.rows[0];
     if (!row || !(await bcrypt.compare(password, String(row.password_hash)))) {
       throw unauthorized('이메일 또는 비밀번호가 맞지 않아요.');
     }
+    if (row.removed_at) throw forbidden('가족에서 제거된 계정이에요. 다시 함께하려면 가입을 요청해 주세요.');
     if (row.status !== 'active') throw forbidden('아직 관리자 승인 전이에요. 승인 후 로그인할 수 있어요.');
 
     setSession(reply, String(row.id), config.isProd);

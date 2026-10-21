@@ -116,11 +116,11 @@ export async function feedRoutes(app: FastifyInstance) {
     const rows = rs.rows.slice(0, limit);
     const ids = rows.map((r) => String(r.id));
 
-    const previews = new Map<string, { author: string; body: string }[]>();
+    const previews = new Map<string, { id: string; author: string; body: string; deleted: boolean }[]>();
     if (ids.length) {
       const crs = await db.execute({
-        sql: `SELECT feed_id, author, body FROM (
-                SELECT c.feed_id, u.name AS author, c.body,
+        sql: `SELECT id, feed_id, author, body, deleted_at FROM (
+                SELECT c.id, c.feed_id, u.name AS author, c.body, c.deleted_at,
                   ROW_NUMBER() OVER (PARTITION BY c.feed_id ORDER BY c.created_at) AS rn
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id IN (${ids.map(() => '?').join(',')})
@@ -129,7 +129,7 @@ export async function feedRoutes(app: FastifyInstance) {
       });
       for (const c of crs.rows) {
         const list = previews.get(String(c.feed_id)) ?? [];
-        list.push({ author: String(c.author), body: String(c.body) });
+        list.push({ id: String(c.id), author: String(c.author), body: String(c.body), deleted: c.deleted_at !== null });
         previews.set(String(c.feed_id), list);
       }
     }
@@ -208,13 +208,13 @@ export async function feedRoutes(app: FastifyInstance) {
     return { feed: await feedDetail(req.params.id) };
   });
 
-  // 댓글: 오래된 순, 5개씩 더보기
+  // 댓글: 오래된 순, 5개씩 더보기. 삭제된 댓글도 자리를 지키며 deleted: true 로 내려간다
   app.get<{ Params: { id: string } }>('/api/feeds/:id/comments', { preHandler: requireUser }, async (req) => {
     const { offset, limit } = commentsQuery.parse(req.query);
     const [list, count] = await db.batch(
       [
         {
-          sql: `SELECT c.id, c.body, c.created_at, u.name AS author
+          sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.author_id, u.name AS author
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id = ?
                 ORDER BY c.created_at
@@ -231,17 +231,47 @@ export async function feedRoutes(app: FastifyInstance) {
         author: String(r.author),
         body: String(r.body),
         createdAt: String(r.created_at),
+        deleted: r.deleted_at !== null,
+        mine: r.author_id === req.currentUser!.id,
       })),
       total: Number(count.rows[0].n),
     };
   });
+
+  // 본인 댓글만 삭제. 본문을 비우고 deleted_at 을 남긴다
+  app.delete<{ Params: { id: string; commentId: string } }>(
+    '/api/feeds/:id/comments/:commentId',
+    { preHandler: requireUser },
+    async (req) => {
+      const rs = await db.execute({
+        sql: 'SELECT author_id, deleted_at FROM comments WHERE id = ? AND feed_id = ?',
+        args: [req.params.commentId, req.params.id],
+      });
+      const row = rs.rows[0];
+      if (!row || row.deleted_at !== null) throw notFound('이미 삭제되었거나 없는 댓글이에요.');
+      if (row.author_id !== req.currentUser!.id) throw forbidden('내가 쓴 댓글만 삭제할 수 있어요.');
+
+      await db.execute({
+        sql: "UPDATE comments SET body = '', deleted_at = ? WHERE id = ?",
+        args: [nowISO(), req.params.commentId],
+      });
+      return { ok: true };
+    },
+  );
 
   app.post<{ Params: { id: string } }>('/api/feeds/:id/comments', { preHandler: requireUser }, async (req, reply) => {
     const { body } = commentBody.parse(req.body);
     const feed = await db.execute({ sql: 'SELECT id FROM feeds WHERE id = ?', args: [req.params.id] });
     if (!feed.rows[0]) throw notFound('피드를 찾을 수 없어요.');
 
-    const comment = { id: randomUUID(), author: req.currentUser!.name, body, createdAt: nowISO() };
+    const comment = {
+      id: randomUUID(),
+      author: req.currentUser!.name,
+      body,
+      createdAt: nowISO(),
+      deleted: false,
+      mine: true,
+    };
     await db.execute({
       sql: 'INSERT INTO comments (id, feed_id, author_id, body, created_at) VALUES (?, ?, ?, ?, ?)',
       args: [comment.id, req.params.id, req.currentUser!.id, body, comment.createdAt],

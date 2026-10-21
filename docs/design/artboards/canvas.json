@@ -1,16 +1,1 @@
-{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-21T09:00:00Z"},"title":"우리가족 SNS","launch":{"view":"canvas"},"pages":[],
-"boards":{
-"Main.dc.html":{"x":0,"y":0,"w":390,"h":844,"title":"로그인","is_interactive":true},
-"Signup.dc.html":{"x":470,"y":0,"w":390,"h":844,"title":"회원가입","is_interactive":true},
-"Feed.dc.html":{"x":940,"y":0,"w":390,"h":1660,"title":"메인 피드","is_interactive":true},
-"Detail.dc.html":{"x":1410,"y":0,"w":390,"h":844,"title":"피드 상세 (모달)","is_interactive":true},
-"Compose.dc.html":{"x":1880,"y":0,"w":390,"h":900,"title":"피드 작성 / 수정","is_interactive":true},
-"ApprovalEmail.dc.html":{"x":0,"y":2010,"w":600,"h":760,"title":"관리자 승인 메일","is_interactive":true},
-"Confirm.dc.html":{"x":680,"y":2010,"w":390,"h":844,"title":"승인 링크 결과","is_interactive":true}
-},
-"order":["Main.dc.html","Signup.dc.html","Feed.dc.html","Detail.dc.html","Compose.dc.html","ApprovalEmail.dc.html","Confirm.dc.html"],
-"notes":{
-"row1":{"x":0,"y":-300,"text":"앱 화면 흐름","kind":"title1","maxW":2270},
-"row2":{"x":0,"y":1780,"text":"가입 승인 흐름","kind":"title1","maxW":1070}
-},
-"designSystems":[]}
+{"v": 3, "createdOnFiles": {"v": 1, "at": "2026-10-21T09:00:00Z"}, "title": "우리가족 SNS", "launch": {"view": "canvas"}, "pages": [], "boards": {"Main.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "로그인", "is_interactive": true}, "Signup.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "회원가입", "is_interactive": true}, "Feed.dc.html": {"x": 940, "y": 0, "w": 390, "h": 1660, "title": "메인 피드", "is_interactive": true}, "Detail.dc.html": {"x": 1410, "y": 0, "w": 390, "h": 844, "title": "피드 상세 (모달)", "is_interactive": true}, "Compose.dc.html": {"x": 1880, "y": 0, "w": 390, "h": 900, "title": "피드 작성 / 수정", "is_interactive": true}, "ApprovalEmail.dc.html": {"x": 0, "y": 2010, "w": 600, "h": 760, "title": "관리자 승인 메일", "is_interactive": true}, "Confirm.dc.html": {"x": 680, "y": 2010, "w": 390, "h": 844, "title": "승인 링크 결과", "is_interactive": true}, "Members.dc.html": {"x": 2350, "y": 0, "w": 390, "h": 844, "title": "가족 구성원 관리", "is_interactive": true}}, "order": ["Main.dc.html", "Signup.dc.html", "Feed.dc.html", "Detail.dc.html", "Compose.dc.html", "Members.dc.html", "ApprovalEmail.dc.html", "Confirm.dc.html"], "notes": {"row1": {"x": 0, "y": -300, "text": "앱 화면 흐름", "kind": "title1", "maxW": 2740}, "row2": {"x": 0, "y": 1780, "text": "가입 승인 흐름", "kind": "title1", "maxW": 1070}}, "designSystems": []}
