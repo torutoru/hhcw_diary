@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>우리가족 로그인</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#234F3B}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; padding: 96px 24px 40px; display: flex; flex-direction: column; gap: 40px">
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 14px">
+    <div style="width: 72px; height: 72px; border-radius: 22px; background: #2F6B4F; display: flex; align-items: center; justify-content: center">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M12 17s-3-1.8-3-3.6A1.6 1.6 0 0 1 12 12.6a1.6 1.6 0 0 1 3 .8c0 1.8-3 3.6-3 3.6z"></path></svg>
+    </div>
+    <h1 style="margin: 0; font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 34px; font-weight: 400; letter-spacing: -0.5px">우리가족</h1>
+    <p style="margin: 0; font-size: 15px; color: #5E665F">하루 한 장, 우리 집 이야기</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="login-email" style="font-size: 14px; font-weight: 500">이메일</label>
+      <input id="login-email" type="email" placeholder="family@example.com" style="height: 52px; box-sizing: border-box; border: 1px solid #D8D4C8; border-radius: 14px; padding: 0 16px; font-size: 16px; background: #FFFFFF; color: #1D2620; font-family: inherit">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="login-pw" style="font-size: 14px; font-weight: 500">비밀번호</label>
+      <input id="login-pw" type="password" placeholder="비밀번호" style="height: 52px; box-sizing: border-box; border: 1px solid #D8D4C8; border-radius: 14px; padding: 0 16px; font-size: 16px; background: #FFFFFF; color: #1D2620; font-family: inherit">
+    </div>
+    <a href="Feed.dc.html" style="margin-top: 8px; height: 54px; border-radius: 14px; background: #2F6B4F; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">로그인</a>
+    <a href="Signup.dc.html" style="height: 54px; border-radius: 14px; background: transparent; border: 1.5px solid #2F6B4F; box-sizing: border-box; color: #2F6B4F; font-size: 16px; font-weight: 500; display: flex; align-items: center; justify-content: center; text-decoration: none">회원가입</a>
+  </div>
+
+  <p style="margin: auto 0 0; text-align: center; font-size: 13px; line-height: 1.6; color: #5E665F">가족만 쓰는 공간이에요.<br>가입하면 관리자 승인 후 로그인할 수 있어요.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

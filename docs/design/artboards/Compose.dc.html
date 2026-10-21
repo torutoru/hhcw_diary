@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>오늘의 피드 작성</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#234F3B}
+</style>
+</helmet>
+<div style="width: 390px; height: 900px; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column">
+  <header style="height: 60px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E4E1D8">
+    <a href="Feed.dc.html" style="height: 44px; padding: 0 12px; display: flex; align-items: center; font-size: 15px; color: #5E665F; text-decoration: none">취소</a>
+    <span style="font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 19px">{{heading}}</span>
+    <span style="width: 56px"></span>
+  </header>
+
+  <div style="flex: 1; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <span style="font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #F2C14E; color: #1D2620">오늘</span>
+      <span style="font-size: 15px; font-weight: 500">10월 21일 수요일</span>
+      <span style="font-size: 13px; color: #5E665F">· 하루 한 번</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 14px; font-weight: 700">대표 사진 <span style="color: #A3361F">*</span></span>
+      <sc-if value="{{isEdit}}" hint-placeholder-val="{{ false }}">
+        <div style="height: 240px; border-radius: 16px; background: #DCE8DF; position: relative; display: flex; align-items: center; justify-content: center; color: #3E4A42; font-size: 13px">
+          [대표 사진]
+          <button type="button" style="position: absolute; right: 10px; bottom: 10px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(29, 38, 32, 0.8); color: #FFFFFF; font-size: 13px; font-family: inherit">사진 바꾸기</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{isCreate}}" hint-placeholder-val="{{ true }}">
+        <button type="button" style="height: 240px; border-radius: 16px; border: 2px dashed #B9B4A6; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #2F6B4F; font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 9"></path></svg>
+          대표 사진 고르기
+        </button>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 14px; font-weight: 700">사진 더하기</span>
+        <span style="font-size: 13px; color: #5E665F">{{extraCount}} / 5</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{slots}}" as="s" hint-placeholder-count="5">
+          <sc-if value="{{s.filled}}" hint-placeholder-val="{{ false }}">
+            <div style="aspect-ratio: 1 / 1; border-radius: 12px; background: {{s.tint}}; position: relative">
+              <button type="button" aria-label="사진 빼기" style="position: absolute; top: -6px; right: -6px; width: 26px; height: 26px; border: 2px solid #F4F2EC; border-radius: 50%; background: #1D2620; color: #FFFFFF; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+          </sc-if>
+          <sc-if value="{{s.empty}}" hint-placeholder-val="{{ true }}">
+            <button type="button" aria-label="사진 추가" style="aspect-ratio: 1 / 1; border-radius: 12px; border: 1.5px dashed #B9B4A6; background: #FFFFFF; color: #5E665F; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <label for="compose-text" style="font-size: 14px; font-weight: 700">오늘 이야기</label>
+      <textarea id="compose-text" placeholder="오늘 우리 가족에게 있었던 일을 적어주세요" style="height: 150px; box-sizing: border-box; resize: none; border: 1px solid #D8D4C8; border-radius: 14px; padding: 14px 16px; font-size: 15px; line-height: 1.6; background: #FFFFFF; color: #1D2620; font-family: inherit">{{bodyText}}</textarea>
+    </div>
+
+    <a href="Feed.dc.html" style="margin-top: auto; height: 54px; border-radius: 14px; background: #2F6B4F; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">{{submitLabel}}</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["create","edit"],"default":"edit","section":"보기"},"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const mode = this.props.mode ?? 'edit';
+    const isEdit = mode === 'edit';
+    const tints = ['#F3E3C3', '#E3E0EE', '#F2DCD3'];
+    const filledCount = isEdit ? 3 : 0;
+    const slots = [0, 1, 2, 3, 4].map((i) => ({ filled: i < filledCount, empty: i >= filledCount, tint: tints[i] || '#EAE7DC' }));
+    return {
+      isEdit,
+      isCreate: !isEdit,
+      heading: isEdit ? '오늘의 피드 수정' : '오늘의 피드 작성',
+      submitLabel: isEdit ? '수정 저장하기' : '피드 올리기',
+      extraCount: filledCount,
+      slots,
+      bodyText: isEdit ? '한강 공원으로 소풍 다녀온 날. 막내는 처음으로 보조바퀴 없이 자전거를 탔어요.' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

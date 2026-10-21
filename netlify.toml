@@ -1,0 +1,22 @@
+# Netlify: frontend 폴더를 빌드해서 배포
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# API 요청은 Render 백엔드로 프록시한다 (같은 도메인이라 로그인 쿠키가 1st-party 로 동작)
+# TODO: Render 서비스 주소로 바꾸기
+[[redirects]]
+  from = "/api/*"
+  to = "https://hhcw-diary-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# SPA 라우팅
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

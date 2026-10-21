@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>가입 승인 결과</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#234F3B}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; padding: 140px 24px 40px; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center">
+  <sc-if value="{{isSuccess}}" hint-placeholder-val="{{ true }}">
+    <div style="width: 88px; height: 88px; border-radius: 50%; background: #E3EEE6; display: flex; align-items: center; justify-content: center">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#2F6B4F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+    </div>
+  </sc-if>
+  <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
+    <div style="width: 88px; height: 88px; border-radius: 50%; background: #F6E1D9; display: flex; align-items: center; justify-content: center">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#A3361F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+    </div>
+  </sc-if>
+  <h1 style="margin: 0; font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 27px; font-weight: 400">{{title}}</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #5E665F; white-space: pre-line">{{desc}}</p>
+  <a href="Main.dc.html" style="margin-top: auto; width: 100%; height: 54px; border-radius: 14px; background: #2F6B4F; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">우리가족 열기</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"status":{"editor":"enum","options":["success","expired","used"],"default":"success","section":"보기"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.status ?? 'success';
+    const copy = {
+      success: { title: '가입 완료 처리되었습니다!', desc: '[요청자 이메일] 님의 가입을 승인했어요.\n이제 이 이메일로 우리가족에 로그인할 수 있어요.' },
+      expired: { title: '승인 링크가 만료됐어요', desc: '링크는 발급 후 1시간 동안만 유효해요.\n가입을 다시 요청해 달라고 알려주세요.' },
+      used: { title: '이미 처리된 링크예요', desc: '이 승인 링크는 한 번만 쓸 수 있어요.\n가입은 이미 완료됐어요.' }
+    }[s] || { title: '', desc: '' };
+    return { isSuccess: s === 'success', isFail: s !== 'success', title: copy.title, desc: copy.desc };
+  }
+}
+</script>
+</body>
+</html>
