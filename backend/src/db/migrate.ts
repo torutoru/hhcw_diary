@@ -1,3 +1,4 @@
+import { PARENT_NAMES } from '../lib/family.js';
 import { db } from './client.js';
 
 // 시각은 모두 UTC ISO 문자열, 피드 날짜(feed_date)는 한국 시간 기준 YYYY-MM-DD
@@ -54,6 +55,19 @@ CREATE TABLE IF NOT EXISTS comments (
 CREATE INDEX IF NOT EXISTS idx_comments_feed ON comments(feed_id, created_at);
 `;
 
-export async function migrate() {
+// 권한은 호칭으로 정해진다: '엄마', '아빠'만 parent. 기존 데이터도 이 규칙에 맞춘다
+const parentNames = PARENT_NAMES.map((n) => `'${n}'`).join(', ');
+const roleRules = `
+UPDATE users SET role = CASE WHEN name IN (${parentNames}) THEN 'parent' ELSE 'member' END;
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_parent_name ON users(name)
+  WHERE status = 'active' AND name IN (${parentNames});
+`;
+
+export async function migrate(log: (msg: string) => void) {
   await db.executeMultiple(schema);
+  try {
+    await db.executeMultiple(roleRules);
+  } catch (err) {
+    log(`'엄마', '아빠' 호칭이 중복된 승인 사용자가 있어 고유 인덱스를 만들지 못했어요: ${(err as Error).message}`);
+  }
 }

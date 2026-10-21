@@ -50,7 +50,7 @@ export async function requireUser(req: FastifyRequest) {
 
 export async function requireParent(req: FastifyRequest) {
   await requireUser(req);
-  if (req.currentUser!.role !== 'parent') throw forbidden('피드는 부모님만 작성할 수 있어요.');
+  if (req.currentUser!.role !== 'parent') throw forbidden('피드는 엄마, 아빠만 작성하고 수정할 수 있어요.');
 }
 
 export function setSession(reply: FastifyReply, userId: string, secure: boolean) {

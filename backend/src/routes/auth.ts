@@ -4,7 +4,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { db } from '../db/client.js';
-import { conflict, forbidden, unauthorized } from '../lib/errors.js';
+import { conflict, forbidden, HttpError, unauthorized } from '../lib/errors.js';
+import { roleForName } from '../lib/family.js';
 import { sendMail } from '../lib/mailer.js';
 import { formatKST, nowISO } from '../lib/time.js';
 import { clearSession, requireUser, setSession } from '../plugins/auth.js';
@@ -23,27 +24,51 @@ const loginBody = z.object({
   password: z.string(),
 });
 
+async function isParentNameTaken(name: string, exceptUserId: string) {
+  const rs = await db.execute({
+    sql: "SELECT 1 FROM users WHERE name = ? AND status = 'active' AND id <> ? LIMIT 1",
+    args: [name, exceptUserId],
+  });
+  return rs.rows.length > 0;
+}
+
 export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/signup', async (req, reply) => {
     const { email, password, name } = signupBody.parse(req.body);
     const now = nowISO();
-    const passwordHash = await bcrypt.hash(password, 10);
+    const role = roleForName(name);
 
     const existing = await db.execute({ sql: 'SELECT id, status FROM users WHERE email = ?', args: [email] });
+    if (existing.rows[0]?.status === 'active') throw conflict('이미 가입된 이메일이에요.');
+
+    // '엄마', '아빠'는 한 명만: 승인된 사람이나 유효한 링크로 승인 대기 중인 사람이 있으면 막는다
+    if (role === 'parent') {
+      const taken = await db.execute({
+        sql: `SELECT 1 FROM users u
+              WHERE u.name = ? AND u.email <> ?
+                AND (u.status = 'active' OR EXISTS (
+                  SELECT 1 FROM signup_tokens t
+                  WHERE t.user_id = u.id AND t.used_at IS NULL AND t.expires_at > ?))
+              LIMIT 1`,
+        args: [name, email, now],
+      });
+      if (taken.rows[0]) throw conflict(`'${name}' 호칭은 이미 다른 가족이 쓰고 있어요. 다른 호칭을 입력해 주세요.`);
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
     let userId: string;
     if (existing.rows[0]) {
-      if (existing.rows[0].status === 'active') throw conflict('이미 가입된 이메일이에요.');
       // 승인 대기 중에 다시 요청하면 정보를 갱신하고 새 링크를 보낸다
       userId = String(existing.rows[0].id);
       await db.execute({
-        sql: 'UPDATE users SET password_hash = ?, name = ? WHERE id = ?',
-        args: [passwordHash, name, userId],
+        sql: 'UPDATE users SET password_hash = ?, name = ?, role = ? WHERE id = ?',
+        args: [passwordHash, name, role, userId],
       });
     } else {
       userId = randomUUID();
       await db.execute({
-        sql: 'INSERT INTO users (id, email, password_hash, name, created_at) VALUES (?, ?, ?, ?, ?)',
-        args: [userId, email, passwordHash, name, now],
+        sql: 'INSERT INTO users (id, email, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [userId, email, passwordHash, name, role, now],
       });
     }
 
@@ -54,20 +79,26 @@ export async function authRoutes(app: FastifyInstance) {
       args: [token, userId, expires.toISOString(), now],
     });
 
-    await sendMail(
-      {
-        to: config.ADMIN_EMAIL,
-        subject: '[우리가족] 회원가입 요청이 들어왔어요',
-        html: approvalEmail({
-          email,
-          name,
-          requestedAt: formatKST(new Date(now)),
-          expiresAt: formatKST(expires),
-          confirmUrl: `${config.APP_URL}/api/signup/confirm/${token}`,
-        }),
-      },
-      (msg) => req.log.info(msg),
-    );
+    try {
+      await sendMail(
+        {
+          to: config.ADMIN_EMAIL,
+          subject: '[우리가족] 회원가입 요청이 들어왔어요',
+          html: approvalEmail({
+            email,
+            name,
+            canWrite: role === 'parent',
+            requestedAt: formatKST(new Date(now)),
+            expiresAt: formatKST(expires),
+            confirmUrl: `${config.APP_URL}/api/signup/confirm/${token}`,
+          }),
+        },
+        (msg) => req.log.info(msg),
+      );
+    } catch (err) {
+      req.log.error(err);
+      throw new HttpError(502, '관리자에게 승인 메일을 보내지 못했어요. 잠시 후 다시 요청해 주세요.');
+    }
 
     return reply.code(201).send({ ok: true });
   });
@@ -75,34 +106,42 @@ export async function authRoutes(app: FastifyInstance) {
   // 관리자 메일의 승인 링크. 처리 후 프론트의 결과 화면으로 보낸다
   app.get<{ Params: { token: string } }>('/api/signup/confirm/:token', async (req, reply) => {
     const rs = await db.execute({
-      sql: `SELECT t.user_id, t.expires_at, t.used_at, u.email
+      sql: `SELECT t.user_id, t.expires_at, t.used_at, u.email, u.name, u.role
             FROM signup_tokens t JOIN users u ON u.id = t.user_id
             WHERE t.token = ?`,
       args: [req.params.token],
     });
     const row = rs.rows[0];
 
-    let status: 'success' | 'expired' | 'used' | 'invalid';
+    let status: 'success' | 'expired' | 'used' | 'invalid' | 'taken';
     if (!row) status = 'invalid';
     else if (row.used_at) status = 'used';
     else if (new Date(String(row.expires_at)).getTime() < Date.now()) status = 'expired';
+    else if (row.role === 'parent' && (await isParentNameTaken(String(row.name), String(row.user_id)))) status = 'taken';
     else {
       const now = nowISO();
-      await db.batch(
-        [
-          { sql: 'UPDATE signup_tokens SET used_at = ? WHERE token = ?', args: [now, req.params.token] },
-          {
-            sql: "UPDATE users SET status = 'active', approved_at = COALESCE(approved_at, ?) WHERE id = ?",
-            args: [now, row.user_id],
-          },
-        ],
-        'write',
-      );
-      status = 'success';
+      try {
+        await db.batch(
+          [
+            { sql: 'UPDATE signup_tokens SET used_at = ? WHERE token = ?', args: [now, req.params.token] },
+            {
+              sql: "UPDATE users SET status = 'active', approved_at = COALESCE(approved_at, ?) WHERE id = ?",
+              args: [now, row.user_id],
+            },
+          ],
+          'write',
+        );
+        status = 'success';
+      } catch (err) {
+        // 동시에 승인된 경우 uniq_parent_name 인덱스가 막는다
+        if (!String((err as Error).message).includes('UNIQUE')) throw err;
+        status = 'taken';
+      }
     }
 
     const qs = new URLSearchParams({ status });
     if (row?.email) qs.set('email', String(row.email));
+    if (row?.name) qs.set('name', String(row.name));
     return reply.redirect(`${config.APP_URL}/signup/confirm?${qs}`);
   });
 

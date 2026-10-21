@@ -39,7 +39,14 @@
 - 비밀번호: bcrypt 해시
 - 세션: JWT를 `hhcw_session` `httpOnly` 쿠키에 저장 (30일, `SameSite=Lax`, 운영에서 `Secure`)
 - 매 요청 DB에서 사용자 상태·권한을 다시 읽으므로, 권한 변경이 바로 반영됩니다.
-- 권한: `parent` (피드 작성·수정), `member` (보기·댓글). 승인 직후 기본값은 `member`
+- 권한은 가입 때 입력한 **호칭으로 정해집니다** ([backend/src/lib/family.ts](../backend/src/lib/family.ts)).
+  - '엄마', '아빠' → `parent` (피드 작성·수정 + 댓글)
+  - 그 외 호칭 → `member` (보기 + 댓글)
+- '엄마', '아빠'는 각각 한 명만 등록할 수 있습니다. 세 단계로 막습니다.
+  1. 가입 요청: 승인된 사람이나, 유효한 링크로 승인 대기 중인 사람이 이미 있으면 409
+  2. 승인 링크: 그 사이 같은 호칭이 승인됐으면 승인하지 않고 `status=taken`
+  3. DB: `uniq_parent_name` 부분 고유 인덱스 (`status = 'active'` 이고 호칭이 엄마/아빠인 행)
+- 서버 시작 시 기존 사용자의 `role` 도 호칭 기준으로 다시 맞춥니다.
 
 ## DB 스키마 (Turso / libSQL)
 

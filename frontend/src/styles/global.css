@@ -255,6 +255,24 @@ textarea {
   line-height: 1.6;
   color: var(--text-muted);
 }
+.guide {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.guide p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.guide b {
+  color: var(--primary);
+}
 
 .result {
   flex: 1;

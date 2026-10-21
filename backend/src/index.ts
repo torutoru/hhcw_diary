@@ -6,8 +6,8 @@ import { cleanupOrphanImages } from './routes/images.js';
 
 const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-await migrate();
 const app = await buildApp();
+await migrate((msg) => app.log.warn(msg));
 
 if (!isR2Configured) app.log.warn('R2 설정이 없어 사진을 backend/.uploads 에 저장해요 (로컬 개발용).');
 

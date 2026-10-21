@@ -67,6 +67,13 @@ export default function SignupPage() {
           <div className="stack" style={{ gap: 8 }}>
             <h1 className="page-title display">가족 가입 요청</h1>
             <p className="page-desc">요청을 보내면 관리자가 메일로 승인해요.</p>
+            <div className="guide">
+              <p>
+                호칭 <b>엄마</b>, <b>아빠</b>는 한 명씩만 등록할 수 있어요.
+              </p>
+              <p>피드는 엄마, 아빠만 작성하고 수정할 수 있어요.</p>
+              <p>나머지 가족은 호칭을 자유롭게 입력하고, 피드를 보고 댓글을 남길 수 있어요.</p>
+            </div>
           </div>
 
           <div className="stack" style={{ gap: 18 }}>
@@ -89,7 +96,7 @@ export default function SignupPage() {
                 id="su-name"
                 className="input"
                 type="text"
-                placeholder="예: 엄마, 큰딸, 할머니"
+                placeholder="예: 엄마, 아빠, 큰딸, 할머니"
                 maxLength={20}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
