@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>우리가족 메인 피드</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#234F3B}
+</style>
+</helmet>
+<div style="width: 390px; height: 1660px; box-sizing: border-box; background: #F4F2EC; color: #1D2620; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column">
+  <header style="height: 60px; padding: 0 12px 0 20px; display: flex; align-items: center; justify-content: space-between; background: #F4F2EC; border-bottom: 1px solid #E4E1D8">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div style="width: 32px; height: 32px; border-radius: 10px; background: #2F6B4F; display: flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg>
+      </div>
+      <span style="font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 21px">우리가족</span>
+    </div>
+    <a href="Main.dc.html" aria-label="내 정보 · 로그아웃" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1D2620">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>
+    </a>
+  </header>
+
+  <main style="padding: 16px; display: flex; flex-direction: column; gap: 16px">
+    <sc-if value="{{showWrite}}" hint-placeholder-val="{{ false }}">
+      <a href="Compose.dc.html" style="height: 56px; border-radius: 16px; background: #2F6B4F; color: #FFFFFF; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        오늘의 피드 작성하기
+      </a>
+    </sc-if>
+    <sc-if value="{{showEdit}}" hint-placeholder-val="{{ true }}">
+      <a href="Compose.dc.html" style="height: 56px; box-sizing: border-box; border-radius: 16px; background: #FFFFFF; border: 1.5px solid #2F6B4F; color: #2F6B4F; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>
+        오늘의 피드 수정하기
+      </a>
+    </sc-if>
+
+    <sc-for list="{{feeds}}" as="item" hint-placeholder-count="3">
+      <a href="Detail.dc.html" style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #E4E1D8; border-radius: 20px; color: #1D2620; text-decoration: none">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; font-size: 18px">{{item.date}}</span>
+            <sc-if value="{{item.isToday}}" hint-placeholder-val="{{ false }}">
+              <span style="font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #F2C14E; color: #1D2620">오늘</span>
+            </sc-if>
+          </div>
+          <span style="display: flex; align-items: center; gap: 4px; font-size: 13px; color: #5E665F">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M21 16l-5-5-8 9"></path></svg>
+            {{item.photoCount}}
+          </span>
+        </div>
+        <div style="width: 100%; aspect-ratio: 1 / 1; border-radius: 14px; background: {{item.tint}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #3E4A42">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><circle cx="9" cy="10" r="1.8"></circle><path d="M21 16l-5-5-8 9"></path></svg>
+          <span style="font-size: 13px">[대표 사진]</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 2px 2px">
+          <sc-for list="{{item.comments}}" as="c" hint-placeholder-count="2">
+            <div style="font-size: 14px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"><b style="font-weight: 700; margin-right: 6px">{{c.who}}</b>{{c.text}}</div>
+          </sc-for>
+          <sc-if value="{{item.hasMore}}" hint-placeholder-val="{{ true }}">
+            <span style="font-size: 14px; color: #5E665F">{{item.moreLabel}}</span>
+          </sc-if>
+          <sc-if value="{{item.noComments}}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 14px; color: #5E665F">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</span>
+          </sc-if>
+        </div>
+      </a>
+    </sc-for>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"viewer":{"editor":"enum","options":["parent","member"],"default":"parent","section":"보기"},"todayPosted":{"editor":"boolean","default":true,"section":"보기"},"$preview":{"width":390,"height":1660}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const viewer = this.props.viewer ?? 'parent';
+    const todayPosted = this.props.todayPosted ?? true;
+    const isParent = viewer === 'parent';
+    const raw = [
+      { date: '10월 21일 수요일', isToday: true, photos: 6, tint: '#DCE8DF', total: 7,
+        comments: [{ who: '할머니', text: '김밥 싸들고 간 보람이 있네~' }, { who: '큰딸', text: '다음엔 나도 자전거 탈래!' }] },
+      { date: '10월 20일 화요일', isToday: false, photos: 3, tint: '#F3E3C3', total: 1,
+        comments: [{ who: '아빠', text: '오늘 저녁 진짜 맛있었다' }] },
+      { date: '10월 18일 일요일', isToday: false, photos: 5, tint: '#E3E0EE', total: 0, comments: [] }
+    ];
+    const feeds = raw
+      .filter((f) => todayPosted || !f.isToday)
+      .map((f) => ({
+        date: f.date,
+        isToday: f.isToday,
+        tint: f.tint,
+        photoCount: f.photos + '장',
+        comments: f.comments.slice(0, 2),
+        hasMore: f.total > 2,
+        moreLabel: '댓글 ' + (f.total - 2) + '개 더보기',
+        noComments: f.total === 0
+      }));
+    return {
+      showWrite: isParent && !todayPosted,
+      showEdit: isParent && todayPosted,
+      feeds
+    };
+  }
+}
+</script>
+</body>
+</html>

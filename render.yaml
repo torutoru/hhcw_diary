@@ -1,0 +1,41 @@
+# Render Blueprint: backend 폴더를 Node 웹 서비스로 배포
+services:
+  - type: web
+    name: hhcw-diary-api
+    runtime: node
+    rootDir: backend
+    region: singapore
+    plan: free
+    # NODE_ENV=production 이면 devDependencies(typescript)가 빠지므로 명시적으로 포함
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false

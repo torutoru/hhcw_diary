@@ -1,0 +1,56 @@
+import type { Comment, FeedDetail, FeedListResponse, UploadedImage, User } from './types';
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { ...init, headers, credentials: 'same-origin' });
+  } catch {
+    throw new ApiError(0, '네트워크에 연결할 수 없어요.');
+  }
+  const data = res.headers.get('content-type')?.includes('application/json') ? await res.json() : null;
+  if (!res.ok) throw new ApiError(res.status, data?.error ?? '요청을 처리하지 못했어요.');
+  return data as T;
+}
+
+const json = (body: unknown) => JSON.stringify(body);
+
+export const api = {
+  me: () => request<{ user: User }>('/auth/me'),
+  login: (email: string, password: string) =>
+    request<{ user: User }>('/auth/login', { method: 'POST', body: json({ email, password }) }),
+  logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
+  signup: (email: string, password: string, name: string) =>
+    request<{ ok: true }>('/auth/signup', { method: 'POST', body: json({ email, password, name }) }),
+
+  feeds: (before?: string) =>
+    request<FeedListResponse>(`/feeds${before ? `?before=${before}` : ''}`),
+  today: () => request<{ date: string; feed: FeedDetail | null }>('/feeds/today'),
+  feed: (id: string) => request<{ feed: FeedDetail }>(`/feeds/${id}`),
+  createFeed: (body: string, imageIds: string[]) =>
+    request<{ feed: FeedDetail }>('/feeds', { method: 'POST', body: json({ body, imageIds }) }),
+  updateFeed: (id: string, body: string, imageIds: string[]) =>
+    request<{ feed: FeedDetail }>(`/feeds/${id}`, { method: 'PUT', body: json({ body, imageIds }) }),
+
+  comments: (feedId: string, offset: number, limit = 5) =>
+    request<{ items: Comment[]; total: number }>(`/feeds/${feedId}/comments?offset=${offset}&limit=${limit}`),
+  addComment: (feedId: string, body: string) =>
+    request<{ comment: Comment }>(`/feeds/${feedId}/comments`, { method: 'POST', body: json({ body }) }),
+
+  uploadImage: (file: Blob, filename: string) => {
+    const form = new FormData();
+    form.append('file', file, filename);
+    return request<UploadedImage>('/images', { method: 'POST', body: form });
+  },
+};

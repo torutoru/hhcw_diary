@@ -1,0 +1,93 @@
+# 아키텍처
+
+```
+ 브라우저 ──▶ Netlify (React 정적 파일)
+              │  /api/*  프록시 (같은 도메인)
+              ▼
+            Render (Fastify API) ──▶ Turso (사용자·피드·댓글·이미지 메타데이터)
+              │                 └──▶ Cloudflare R2 (WebP 이미지 파일)
+              └──▶ Resend (관리자 승인 메일)
+```
+
+## 폴더
+
+| 폴더 | 내용 |
+| --- | --- |
+| `frontend/` | React 18 + Vite + TypeScript, react-router |
+| `backend/` | Node.js + Fastify 5 + TypeScript |
+| `docs/` | 참고 자료와 설계 문서 |
+
+## 기술 선택
+
+**백엔드: Node.js + Fastify**
+- 이미지 리사이즈·WebP 변환에 쓰는 `sharp`(libvips)가 Node에서 가장 빠르고 안정적입니다.
+- Turso 공식 클라이언트(`@libsql/client`)와 R2용 S3 SDK가 모두 Node에서 잘 지원됩니다.
+- Fastify는 Express보다 가볍고 빠르며, 멀티파트 업로드와 JWT 쿠키 플러그인이 공식으로 제공됩니다.
+- 프론트와 같은 TypeScript라 타입 정의를 맞추기 쉽습니다.
+
+**Netlify `/api` 프록시**
+- 프론트(netlify.app)와 API(onrender.com) 도메인이 다르면 로그인 쿠키가 서드파티 쿠키가 되어 Safari 등에서 막힙니다.
+- Netlify가 `/api/*` 를 Render로 넘겨주면 브라우저 입장에서는 같은 도메인이라 `httpOnly` 쿠키가 그대로 동작합니다. CORS 설정도 필요 없습니다.
+- 승인 메일 링크도 시안 그대로 `https://[도메인]/api/signup/confirm/[uuid]` 형태가 됩니다.
+
+**메일: Resend HTTP API**
+- Render 무료 인스턴스는 외부 SMTP 포트가 막혀 있어 HTTP API로 보냅니다.
+- `RESEND_API_KEY` 가 없으면 메일 내용을 서버 로그에 출력합니다 (로컬 개발용).
+
+## 인증
+
+- 비밀번호: bcrypt 해시
+- 세션: JWT를 `hhcw_session` `httpOnly` 쿠키에 저장 (30일, `SameSite=Lax`, 운영에서 `Secure`)
+- 매 요청 DB에서 사용자 상태·권한을 다시 읽으므로, 권한 변경이 바로 반영됩니다.
+- 권한: `parent` (피드 작성·수정), `member` (보기·댓글). 승인 직후 기본값은 `member`
+
+## DB 스키마 (Turso / libSQL)
+
+스키마는 [backend/src/db/migrate.ts](../backend/src/db/migrate.ts) 에 있고, 서버 시작 시 `CREATE TABLE IF NOT EXISTS` 로 적용됩니다.
+
+| 테이블 | 주요 컬럼 |
+| --- | --- |
+| `users` | `email`(unique), `password_hash`, `name`(호칭), `role`, `status`(pending/active) |
+| `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
+| `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
+| `images` | `storage_key`(R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
+| `comments` | `feed_id`, `author_id`, `body` |
+
+- 이미지 파일은 R2에만 있고, DB에는 **R2 키(`images/2026-10/<uuid>.webp`)만** 저장합니다.
+- 화면에 줄 URL은 API가 응답할 때 키로 만듭니다 (아래 참고).
+- 시각은 UTC ISO 문자열, "오늘" 판단은 한국 시간 기준입니다.
+
+## 이미지 처리 흐름
+
+```
+[브라우저]                       [백엔드]                          [R2]
+ 사진 선택
+ 1차 축소 (긴 변 2560px, JPEG)
+ 한 장씩 POST /api/images  ──▶  sharp
+                                 · EXIF 회전 적용, 메타데이터 제거
+                                 · 긴 변 2048px로 리사이즈
+                                 · WebP 품질 88→50 이진 탐색으로
+                                   400KB 이하 최고 품질 선택
+                                 · 안 되면 1600 → 1280 → 1024px  ──▶ PUT images/YYYY-MM/<uuid>.webp
+                                 · images 행 저장 (feed_id = NULL)
+ ◀── { id, url }
+ POST /api/feeds { imageIds }  ──▶  images.feed_id, position 연결
+```
+
+- **브라우저 1차 축소**: 휴대폰 원본(5~10MB)을 그대로 보내지 않아 업로드가 빠릅니다. 1.5MB 이하는 그대로 보냅니다.
+- **서버 최종 변환**: Safari 등 일부 브라우저는 WebP 인코딩을 지원하지 않거나 품질이 일정하지 않아, 최종 변환은 서버에서 합니다.
+- **결과 크기**: 일반 사진은 2048px, 200~400KB 정도가 나옵니다. 압축이 가장 어려운 노이즈 이미지(4000×3000, 4.5MB JPEG)로 시험했을 때 1600×1200, 400KB가 나왔습니다. 원본이 작은 사진은 200KB보다 작을 수 있으며, 일부러 키우지 않습니다.
+- **정리**: 업로드 후 피드에 연결되지 않은 사진(작성 취소 등)은 24시간 뒤 자동 삭제합니다. 수정에서 뺀 사진은 바로 삭제합니다.
+
+### 이미지 URL
+
+- `R2_PUBLIC_URL`(버킷에 연결한 공개 도메인)이 있으면 `https://<도메인>/<키>` 를 씁니다. CDN 캐시가 되어 빠르지만, 주소를 아는 사람은 누구나 볼 수 있습니다 (키에 UUID가 있어 추측은 어렵습니다).
+- 없으면 **서명된 URL**(2시간 유효)을 발급합니다. 로그인한 가족만 사진을 볼 수 있습니다. 서명 시각을 1시간 단위로 맞춰서 같은 시간대에는 URL이 같고, 브라우저 캐시가 동작합니다.
+- 가족 사진이므로 기본값은 서명된 URL을 권장합니다.
+
+## 알려진 제약 / 다음 작업 후보
+
+- 메일 보안 검사기가 링크를 미리 열면(일부 회사 메일의 링크 검사) 승인 링크가 먼저 사용될 수 있습니다. 개인 메일(Gmail 등)에서는 문제가 없지만, 생기면 "승인하기" 버튼이 있는 확인 화면을 한 단계 두는 방식으로 바꿀 수 있습니다.
+- 로그인·가입 요청 횟수 제한(rate limit)이 아직 없습니다.
+- 비밀번호 변경·찾기, 호칭 변경, 댓글 삭제 기능이 없습니다 (시안에 없음).
+- Render 무료 플랜은 15분 동안 요청이 없으면 잠들어서, 첫 요청이 30초 이상 걸릴 수 있습니다.
