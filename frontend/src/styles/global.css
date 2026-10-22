@@ -1119,20 +1119,40 @@ textarea {
 .lightbox-track::-webkit-scrollbar {
   display: none;
 }
+/* 확대 중: 가로 스크롤(사진 넘기기)을 멈추고 손가락 움직임을 확대한 사진 이동에 쓴다 */
+.lightbox-track.is-zoomed {
+  overflow-x: hidden;
+  touch-action: none;
+}
 .lightbox-slide {
   flex: 0 0 100%;
   height: 100%;
   scroll-snap-align: center;
+  scroll-snap-stop: always;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 64px 0;
+}
+/* 확대 영역(react-zoom-pan-pinch)이 슬라이드를 꽉 채우고, 사진은 그 안에서 가운데 정렬 */
+.lightbox-slide .lightbox-zoom {
+  width: 100%;
+  height: 100%;
+}
+.lightbox-slide .lightbox-zoom-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .lightbox-slide img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   display: block;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .lightbox-nav {
   position: absolute;
