@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
+import { listenForInstallPrompt } from './lib/pwa';
 import './styles/global.css';
+
+listenForInstallPrompt();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

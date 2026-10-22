@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import AppStatus from './components/AppStatus';
 import FeedDetailModal from './components/FeedDetailModal';
 import CalendarPage from './pages/CalendarPage';
 import ComposePage from './pages/ComposePage';
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/me" element={<RequireAuth><MyInfoPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <AppStatus />
     </div>
   );
 }

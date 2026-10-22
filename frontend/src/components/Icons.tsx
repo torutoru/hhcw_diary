@@ -31,7 +31,22 @@ export const HomeHeartIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
-export const ChevronLeftIcon = ({ size = 26, strokeWidth = 2.2 }: P) => (
+export const DownloadIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M12 4v11M7 10l5 5 5-5" />
+    <path d="M5 20h14" />
+  </svg>
+);
+
+/** iOS 공유 버튼 모양 */
+export const ShareIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M12 3v12M8 7l4-4 4 4" />
+    <path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
+  </svg>
+);
+
+export const ChevronLeftIcon =({ size = 26, strokeWidth = 2.2 }: P) => (
   <svg {...base(size, strokeWidth)}>
     <path d="M15 5l-7 7 7 7" />
   </svg>

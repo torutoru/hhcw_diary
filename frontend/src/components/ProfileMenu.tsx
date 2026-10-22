@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { LogoutIcon, UserIcon, UsersIcon } from './Icons';
+import { promptInstall, useInstallMode } from '../lib/pwa';
+import { DownloadIcon, LogoutIcon, UserIcon, UsersIcon } from './Icons';
+import { InstallGuideSheet } from './InstallGuide';
 import { Avatar, PersonName } from './Person';
 
 /** 메인 피드 우측 상단 메뉴: 내 정보, 가족 구성원 관리(가족관계 엄마·아빠만), 로그아웃 */
@@ -9,6 +11,8 @@ export default function ProfileMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [guide, setGuide] = useState(false);
+  const installMode = useInstallMode();
   const root = useRef<HTMLDivElement>(null);
 
   // 바깥을 누르거나 Esc 로 닫는다
@@ -29,6 +33,12 @@ export default function ProfileMenu() {
   async function onLogout() {
     await logout();
     navigate('/login', { replace: true });
+  }
+
+  async function onInstall() {
+    setOpen(false);
+    if (installMode === 'prompt') await promptInstall();
+    else setGuide(true);
   }
 
   if (!user) return null;
@@ -63,12 +73,19 @@ export default function ProfileMenu() {
               가족 구성원 관리
             </Link>
           )}
+          {installMode !== 'installed' && installMode !== 'none' && (
+            <button type="button" className="menu-item" onClick={onInstall}>
+              <DownloadIcon />
+              앱으로 설치
+            </button>
+          )}
           <button type="button" className="menu-item" onClick={onLogout}>
             <LogoutIcon />
             로그아웃
           </button>
         </nav>
       )}
+      {guide && <InstallGuideSheet mode={installMode} onClose={() => setGuide(false)} />}
     </div>
   );
 }

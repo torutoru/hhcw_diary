@@ -68,6 +68,15 @@ textarea {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  /* 홈 화면 앱(아이폰 노치·홈 바, 가로 모드 측면)에서 내용이 가려지지 않게 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+/* 홈 화면 앱으로 실행 중일 때: 앱처럼 텍스트 길게 누르기 선택·당겨서 새로고침 효과 줄이기 */
+@media (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 .display {
@@ -357,7 +366,7 @@ textarea {
 /* ---------- 피드 ---------- */
 .app-header {
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top);
   z-index: 10;
   height: 60px;
   padding: 0 12px 0 20px;
@@ -553,7 +562,7 @@ textarea {
   position: relative;
   width: calc(100% - 24px);
   max-width: calc(var(--app-width) - 24px);
-  margin: 36px 0 20px;
+  margin: calc(36px + env(safe-area-inset-top)) 0 calc(20px + env(safe-area-inset-bottom));
   background: var(--surface);
   border-radius: 24px;
   display: flex;
@@ -778,6 +787,104 @@ textarea {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* ---------- PWA: 설치 안내 · 업데이트 · 오프라인 ---------- */
+.install-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 40px 14px 16px;
+  border-radius: 18px;
+  background: var(--primary-soft);
+}
+.install-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.install-card-text b {
+  font-size: 15px;
+}
+.install-card-text span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.install-card-btn {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.install-card-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.install-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.install-steps svg {
+  vertical-align: -3px;
+}
+.install-steps .install-note {
+  list-style: none;
+  margin-left: -20px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.offline-banner {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  z-index: 80;
+  padding: 10px 16px;
+  background: var(--text);
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}
+.toast-actions {
+  display: flex;
+  gap: 4px;
+}
+.toast-actions button:first-child {
+  color: #c9cec9;
+  font-weight: 500;
 }
 
 /* ---------- 피드 작성 달력 ---------- */
@@ -1305,7 +1412,7 @@ textarea {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: calc(100% - 32px);
   max-width: calc(var(--app-width) - 32px);
