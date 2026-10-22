@@ -1587,6 +1587,65 @@ textarea {
   font-weight: 700;
 }
 
+/* ---------- 스켈레톤 (불러오는 중 뼈대) ---------- */
+/* 깜빡여서 멈춘 게 아니라 진행 중임을 보여준다 */
+.skeleton {
+  display: block;
+  background: var(--bg-deep);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.skeleton-title {
+  width: 210px;
+  height: 22px;
+}
+.skeleton-line {
+  width: 100%;
+  height: 14px;
+}
+.skeleton-line.is-short {
+  width: 55%;
+}
+.skeleton-line.is-tiny {
+  width: 72px;
+}
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.detail-skeleton-body {
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* 실제 화면과 같은 모양 유지 (.skeleton 의 8px 모서리가 덮어쓰지 않게) */
+.skeleton.carousel-item {
+  border-radius: 16px;
+}
+.skeleton.avatar {
+  border-radius: 50%;
+}
+.detail-skeleton .comment-main {
+  gap: 8px;
+  padding-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation-duration: 2.4s;
+  }
+}
+
 /* ---------- 첫 로딩: 가족 문구 ---------- */
 .loading-screen {
   flex: 1;

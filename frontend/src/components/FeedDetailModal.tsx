@@ -12,6 +12,41 @@ import { CloseIcon, SendIcon } from './Icons';
 
 const PAGE = 5;
 
+/**
+ * 상세를 불러오는 동안 보여주는 뼈대(스켈레톤). 실제 화면과 같은 자리에 회색 틀을 두고,
+ * 깜빡여서(.skeleton 애니메이션) 멈춘 게 아니라 불러오는 중임을 알린다. 글자는 화면 읽기 기능용으로만 둔다
+ */
+function DetailSkeleton() {
+  return (
+    <div className="detail-skeleton" aria-busy="true">
+      <span className="sr-only" role="status">
+        불러오는 중
+      </span>
+      <div className="carousel" aria-hidden="true">
+        <span className="skeleton carousel-item" />
+      </div>
+      <div className="detail-skeleton-body" aria-hidden="true">
+        <span className="skeleton skeleton-line" />
+        <span className="skeleton skeleton-line" />
+        <span className="skeleton skeleton-line is-short" />
+      </div>
+      <div className="section-gap" aria-hidden="true" />
+      <div className="comments" aria-hidden="true">
+        <span className="skeleton skeleton-line is-tiny" />
+        {[0, 1].map((i) => (
+          <div key={i} className="comment">
+            <span className="skeleton avatar" />
+            <div className="comment-main">
+              <span className="skeleton skeleton-line is-tiny" />
+              <span className="skeleton skeleton-line" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FeedDetailModal() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -127,8 +162,19 @@ export default function FeedDetailModal() {
       <section className="modal" role="dialog" aria-modal="true" aria-label="피드 상세">
         <div className="modal-head">
           <div className="modal-head-text">
-            <h2 className="display">{feed ? formatFullDate(feed.date) : ' '}</h2>
-            {feed && <span className="hint">{formatWrittenLine(feed.date, feed.createdAt, feed.updatedAt)}</span>}
+            {feed ? (
+              <>
+                <h2 className="display">{formatFullDate(feed.date)}</h2>
+                <span className="hint">{formatWrittenLine(feed.date, feed.createdAt, feed.updatedAt)}</span>
+              </>
+            ) : (
+              !error && (
+                <>
+                  <span className="skeleton skeleton-title" aria-hidden="true" />
+                  <span className="skeleton skeleton-line is-short" aria-hidden="true" />
+                </>
+              )
+            )}
           </div>
           <button ref={closeRef} type="button" className="icon-btn modal-close" aria-label="닫기" onClick={close}>
             <CloseIcon />
@@ -137,7 +183,7 @@ export default function FeedDetailModal() {
 
         <div className="modal-body">
           {error && <p className="feed-status" role="alert">{error}</p>}
-          {!feed && !error && <p className="feed-status">불러오는 중…</p>}
+          {!feed && !error && <DetailSkeleton />}
           {feed && (
             <>
               <div className="stack" style={{ gap: 8 }}>
