@@ -5,6 +5,7 @@ import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import FeedCard from '../components/FeedCard';
 import { HomeIcon, PencilIcon } from '../components/Icons';
+import LoadingQuotes from '../components/LoadingQuotes';
 import { NotificationCard } from '../components/NotificationSettings';
 import { APP_NAME } from '../lib/app';
 import ProfileMenu from '../components/ProfileMenu';
@@ -44,13 +45,16 @@ export default function FeedPage() {
     load();
   }, [load]);
 
-  // 목록 끝에 닿으면 다음 페이지
+  // 목록 끝에 닿기 전(아래로 화면 한두 장 남았을 때) 다음 10개를 미리 불러온다
   useEffect(() => {
     const el = sentinel.current;
     if (!el || !nextBefore) return;
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) load(nextBefore);
-    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) load(nextBefore);
+      },
+      { rootMargin: '0px 0px 1200px 0px' },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, [nextBefore, load]);
@@ -121,7 +125,18 @@ export default function FeedPage() {
             </button>
           </div>
         )}
-        {loading && <div className="feed-status">불러오는 중…</div>}
+
+        {/* 첫 불러오기: 가족 문구 / 다음 10개: 아래쪽 작은 스피너 */}
+        {loading && items.length === 0 && <LoadingQuotes />}
+        {loading && items.length > 0 && (
+          <div className="feed-status loading-status" role="status">
+            <span className="spinner" aria-hidden="true" />
+            불러오는 중
+          </div>
+        )}
+        {!loading && !error && items.length > 0 && !nextBefore && (
+          <p className="feed-end">모든 피드를 다 봤어요</p>
+        )}
         <div ref={sentinel} />
       </main>
 

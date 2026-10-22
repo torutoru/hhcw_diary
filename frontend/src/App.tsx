@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import AppStatus from './components/AppStatus';
 import FeedDetailModal from './components/FeedDetailModal';
+import LoadingQuotes from './components/LoadingQuotes';
 import CalendarPage from './pages/CalendarPage';
 import ComposePage from './pages/ComposePage';
 import ConfirmPage from './pages/ConfirmPage';
@@ -15,7 +16,7 @@ import SignupPage from './pages/SignupPage';
 function RequireAuth({ children, parentOnly = false }: { children: ReactNode; parentOnly?: boolean }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="center-loading">불러오는 중…</div>;
+  if (loading) return <LoadingQuotes />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (parentOnly && user.role !== 'parent') return <Navigate to="/" replace />;
   return children;
@@ -23,7 +24,7 @@ function RequireAuth({ children, parentOnly = false }: { children: ReactNode; pa
 
 function GuestOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="center-loading">불러오는 중…</div>;
+  if (loading) return <LoadingQuotes />;
   if (user) return <Navigate to="/" replace />;
   return children;
 }

@@ -1564,6 +1564,88 @@ textarea {
   font-weight: 700;
 }
 
+/* ---------- 첫 로딩: 가족 문구 ---------- */
+.loading-screen {
+  flex: 1;
+  min-height: 60dvh;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  text-align: center;
+}
+.loading-quote {
+  margin: 0;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+.loading-quote.is-shown {
+  opacity: 1;
+  transform: none;
+}
+.loading-quote-mark {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  color: var(--primary);
+  opacity: 0.35;
+}
+.loading-quote blockquote {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--text);
+  word-break: keep-all;
+}
+.loading-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.spinner {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* "동작 줄이기" 설정: 사라지고 나타나는 효과와 회전을 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  .loading-quote {
+    transition: none;
+  }
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+.feed-end {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .center-loading {
   flex: 1;
   display: flex;
