@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { clearBadgeAndNotifications } from '../lib/notifications';
 
@@ -22,6 +23,18 @@ export default function AppStatus() {
       });
     },
   });
+
+  // 알림을 눌렀을 때 앱이 이미 켜져 있으면 서비스 워커(src/sw.ts)가 이동할 주소를 보낸다 → 새로고침 없이 이동
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { type?: string; url?: string } | null;
+      if (data?.type === 'OPEN_URL' && typeof data.url === 'string' && data.url.startsWith('/')) navigate(data.url);
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [navigate]);
 
   // 앱을 열거나 다시 돌아오면 아이콘 배지(새 소식 표시)와 남은 알림을 지운다
   useEffect(() => {

@@ -68,6 +68,8 @@ export interface Comment {
   createdAt: string;
   /** 작성자가 삭제한 댓글. 본문은 비어 있고 자리만 남는다 */
   deleted: boolean;
+  /** 작성자가 고친 댓글 ("수정됨" 표시) */
+  edited: boolean;
   /** 내가 쓴 댓글 (삭제 버튼 표시) */
   mine: boolean;
 }

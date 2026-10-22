@@ -25,7 +25,7 @@ User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
 | GET | `/feeds?before=YYYY-MM-DD&limit=10` 🔒 | 최신순 목록. `{ items: FeedListItem[], nextBefore }`. 다음 페이지는 `before=nextBefore` |
-| GET | `/feeds/dates?month=YYYY-MM` 🔒 | 달력용. `{ month, today, dates: string[] }` — 그 달에 피드가 있는 날짜 |
+| GET | `/feeds/dates?month=YYYY-MM` 🔒 | 달력용(작성하기·검색하기). `{ month, today, dates: string[], feeds: { date, id }[] }` — 그 달에 피드가 있는 날짜와 피드 id |
 | GET | `/feeds/by-date/:date` 🔒 | `{ date, isToday, feed: FeedDetail \| null }` (작성/수정 화면용). 미래·없는 날짜는 400 |
 | GET | `/feeds/:id` 🔒 | `{ feed: FeedDetail }` |
 | POST | `/feeds` 👪 | 피드 작성. `{ date?, body, imageIds: [대표, ...추가] }` (1~6장). `date` 없으면 오늘. 지난 날짜 가능, 미래는 400. 그 날짜에 이미 있으면 409 |
@@ -43,10 +43,11 @@ FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, upd
 | --- | --- | --- |
 | GET | `/feeds/:id/comments?offset=0&limit=5` 🔒 | 오래된 순. `{ items: Comment[], total }`. 삭제된 댓글도 자리를 지키며 포함됨 |
 | POST | `/feeds/:id/comments` 🔒 | `{ body }` (1~500자) → `{ comment }` |
+| PATCH | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 수정 `{ body }`(1~500자) → `{ ok, body }`. `edited` 가 true 가 됨. 남의 댓글은 403, 삭제됐거나 없으면 404. 알림 없음 |
 | DELETE | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 삭제 → `{ ok }`. 남의 댓글은 403, 이미 삭제됐거나 없으면 404 |
 
 ```ts
-Comment = { id, author /* 호칭 */, authorRelation /* 가족관계 */, body, createdAt, deleted /* 삭제됨이면 body 는 "" */, mine /* 내 댓글 */ }
+Comment = { id, author /* 호칭 */, authorRelation /* 가족관계 */, body, createdAt, deleted /* 삭제됨이면 body 는 "" */, edited /* 수정됨 */, mine /* 내 댓글 */ }
 ```
 
 - 삭제는 본문을 비우고 `deleted_at` 을 기록합니다 (행은 남김). 화면에는 그 자리에 "작성자의 요청으로 댓글이 삭제되었습니다"가 표시됩니다.

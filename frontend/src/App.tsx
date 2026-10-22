@@ -11,6 +11,7 @@ import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
 import MembersPage from './pages/MembersPage';
 import MyInfoPage from './pages/MyInfoPage';
+import SearchPage from './pages/SearchPage';
 import SignupPage from './pages/SignupPage';
 
 function RequireAuth({ children, parentOnly = false }: { children: ReactNode; parentOnly?: boolean }) {
@@ -38,6 +39,10 @@ export default function App() {
         <Route path="/signup/confirm" element={<ConfirmPage />} />
         <Route path="/" element={<RequireAuth><FeedPage /></RequireAuth>}>
           {/* 피드 목록 위에 모달로 띄운다 */}
+          <Route path="feeds/:id" element={<FeedDetailModal />} />
+        </Route>
+        {/* 피드 검색하기: 피드가 있는 날을 누르면 상세가 달력 위에 모달로 뜬다 */}
+        <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>}>
           <Route path="feeds/:id" element={<FeedDetailModal />} />
         </Route>
         <Route path="/compose" element={<RequireAuth parentOnly><CalendarPage /></RequireAuth>} />

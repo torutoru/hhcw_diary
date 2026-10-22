@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { CloseIcon, PhotoIcon, PlusIcon } from '../components/Icons';
 import { formatComposeDate } from '../lib/format';
@@ -24,6 +24,8 @@ const nextKey = () => `slot-${++seq}`;
 export default function ComposePage() {
   const navigate = useNavigate();
   const { date = '' } = useParams();
+  // 피드 상세의 "수정하기"로 들어오면 저장·취소 후 그 상세로 돌아간다 (달력에서 왔으면 없음)
+  const returnTo = (useLocation().state as { returnTo?: string } | null)?.returnTo;
   const [isToday, setIsToday] = useState(false);
   const [feedId, setFeedId] = useState<string | null>(null);
   const [cover, setCover] = useState<Slot | null>(null);
@@ -124,7 +126,9 @@ export default function ComposePage() {
       const imageIds = all.map((s) => s.imageId!);
       if (feedId) await api.updateFeed(feedId, body, imageIds);
       else await api.createFeed(date, body, imageIds);
-      navigate('/', { replace: true });
+      // 상세에서 왔으면 한 단계 뒤(그 상세)로. 상세는 다시 불러와서 수정한 내용이 바로 보인다
+      if (returnTo) navigate(-1);
+      else navigate('/', { replace: true });
     } catch (err) {
       setError((err as Error).message);
       setSaving(false);
@@ -152,7 +156,17 @@ export default function ComposePage() {
     <>
       <header className="compose-header">
         {/* 취소하면 이번에 올린 사진은 모두 지운다 */}
-        <Link to="/compose" onClick={() => all.forEach(discard)}>
+        <Link
+          to={returnTo ?? '/compose'}
+          onClick={(e) => {
+            all.forEach(discard);
+            // 상세에서 왔으면 뒤로 가기 기록이 겹치지 않게 한 단계 뒤로
+            if (returnTo) {
+              e.preventDefault();
+              navigate(-1);
+            }
+          }}
+        >
           취소
         </Link>
         <h1 className="display">{heading}</h1>

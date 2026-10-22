@@ -190,13 +190,19 @@ export async function feedRoutes(app: FastifyInstance) {
   });
 
   // 달력용: 그 달에 피드가 있는 날짜 목록
+  // feeds: 날짜별 피드 id (검색 달력에서 날짜를 누르면 상세를 열 때 사용)
   app.get('/api/feeds/dates', { preHandler: requireUser }, async (req) => {
     const { month } = monthQuery.parse(req.query);
     const rs = await db.execute({
-      sql: 'SELECT feed_date FROM feeds WHERE feed_date LIKE ? ORDER BY feed_date',
+      sql: 'SELECT id, feed_date FROM feeds WHERE feed_date LIKE ? ORDER BY feed_date',
       args: [`${month}-%`],
     });
-    return { month, today: todayKST(), dates: rs.rows.map((r) => String(r.feed_date)) };
+    return {
+      month,
+      today: todayKST(),
+      dates: rs.rows.map((r) => String(r.feed_date)),
+      feeds: rs.rows.map((r) => ({ date: String(r.feed_date), id: String(r.id) })),
+    };
   });
 
   // 특정 날짜의 피드 (작성/수정 화면용). 없으면 feed: null
@@ -278,7 +284,7 @@ export async function feedRoutes(app: FastifyInstance) {
     const [list, count] = await db.batch(
       [
         {
-          sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.author_id,
+          sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.edited_at, c.author_id,
                   u.nickname AS author, u.relation AS author_relation
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id = ?
@@ -298,11 +304,34 @@ export async function feedRoutes(app: FastifyInstance) {
         body: String(r.body),
         createdAt: String(r.created_at),
         deleted: r.deleted_at !== null,
+        edited: r.edited_at !== null,
         mine: r.author_id === req.currentUser!.id,
       })),
       total: Number(count.rows[0].n),
     };
   });
+
+  // 본인 댓글만 수정. 지운 댓글은 고칠 수 없다. 알림은 보내지 않는다
+  app.patch<{ Params: { id: string; commentId: string } }>(
+    '/api/feeds/:id/comments/:commentId',
+    { preHandler: requireUser },
+    async (req) => {
+      const { body } = commentBody.parse(req.body);
+      const rs = await db.execute({
+        sql: 'SELECT author_id, deleted_at FROM comments WHERE id = ? AND feed_id = ?',
+        args: [req.params.commentId, req.params.id],
+      });
+      const row = rs.rows[0];
+      if (!row || row.deleted_at !== null) throw notFound('이미 삭제되었거나 없는 댓글이에요.');
+      if (row.author_id !== req.currentUser!.id) throw forbidden('내가 쓴 댓글만 수정할 수 있어요.');
+
+      await db.execute({
+        sql: 'UPDATE comments SET body = ?, edited_at = ? WHERE id = ?',
+        args: [body, nowISO(), req.params.commentId],
+      });
+      return { ok: true, body };
+    },
+  );
 
   // 본인 댓글만 삭제. 본문을 비우고 deleted_at 을 남긴다
   app.delete<{ Params: { id: string; commentId: string } }>(
@@ -342,6 +371,7 @@ export async function feedRoutes(app: FastifyInstance) {
       body,
       createdAt: nowISO(),
       deleted: false,
+      edited: false,
       mine: true,
     };
     await db.execute({
@@ -362,7 +392,8 @@ export async function feedRoutes(app: FastifyInstance) {
             kind: 'comment',
             title: config.APP_NAME,
             body: `${displayName(me.nickname, me.relation)}: ${body.length > 60 ? `${body.slice(0, 60)}…` : body}`,
-            url: `/feeds/${req.params.id}`,
+            // #comments: 상세를 열면 댓글을 끝까지 불러와 최신 댓글 위치로 스크롤
+            url: `/feeds/${req.params.id}#comments`,
             tag: `comments-${req.params.id}`,
             feedLabel,
           },

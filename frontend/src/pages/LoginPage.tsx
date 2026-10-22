@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeHeartIcon } from '../components/Icons';
 import { InstallCard } from '../components/InstallGuide';
+import LoadingText, { useSlow } from '../components/LoadingText';
 import { APP_NAME } from '../lib/app';
 import { loadRememberedEmail, saveRememberedEmail } from '../lib/rememberLogin';
 
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(() => loadRememberedEmail() !== null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const slow = useSlow(submitting);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -75,8 +77,14 @@ export default function LoginPage() {
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? '로그인 중…' : '로그인'}
+          {submitting ? <LoadingText text="로그인 중" /> : '로그인'}
         </button>
+        {/* 5초 넘게 걸리면: 잠든 서버가 깨어나는 중이라고 알려준다 */}
+        {slow && (
+          <p className="slow-hint" role="status">
+            서버를 깨우고 있어요. 첫 접속은 30초쯤 걸릴 수 있어요.
+          </p>
+        )}
         <Link to="/signup" className="btn btn-outline">
           회원가입
         </Link>

@@ -41,7 +41,9 @@ export const api = {
   feeds: (before?: string) =>
     request<FeedListResponse>(`/feeds${before ? `?before=${before}` : ''}`),
   feedDates: (month: string) =>
-    request<{ month: string; today: string; dates: string[] }>(`/feeds/dates?month=${month}`),
+    request<{ month: string; today: string; dates: string[]; feeds: { date: string; id: string }[] }>(
+      `/feeds/dates?month=${month}`,
+    ),
   feedByDate: (date: string) =>
     request<{ date: string; isToday: boolean; feed: FeedDetail | null }>(`/feeds/by-date/${date}`),
   feed: (id: string) => request<{ feed: FeedDetail }>(`/feeds/${id}`),
@@ -54,6 +56,11 @@ export const api = {
     request<{ items: Comment[]; total: number }>(`/feeds/${feedId}/comments?offset=${offset}&limit=${limit}`),
   addComment: (feedId: string, body: string) =>
     request<{ comment: Comment }>(`/feeds/${feedId}/comments`, { method: 'POST', body: json({ body }) }),
+  editComment: (feedId: string, commentId: string, body: string) =>
+    request<{ ok: true; body: string }>(`/feeds/${feedId}/comments/${commentId}`, {
+      method: 'PATCH',
+      body: json({ body }),
+    }),
   deleteComment: (feedId: string, commentId: string) =>
     request<{ ok: true }>(`/feeds/${feedId}/comments/${commentId}`, { method: 'DELETE' }),
 

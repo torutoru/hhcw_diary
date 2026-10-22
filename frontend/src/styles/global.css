@@ -161,6 +161,23 @@ textarea {
   accent-color: var(--primary);
   cursor: pointer;
 }
+/* "로그인 중..." 점 애니메이션: 점 자리 폭을 고정해 글자가 흔들리지 않게 */
+.loading-text {
+  display: inline-flex;
+  align-items: baseline;
+}
+.loading-dots {
+  display: inline-block;
+  width: 1.4em;
+  text-align: left;
+}
+.slow-hint {
+  margin: -6px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
 .form-error {
   margin: 0;
   padding: 12px 14px;
@@ -507,6 +524,113 @@ textarea {
   outline-offset: 3px;
 }
 
+/* 관리자용 ＋ 버튼 메뉴: 누르면 ×로 돌고 위로 "피드 작성하기", "피드 검색하기"가 펼쳐진다 */
+button.fab {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.fab-menu {
+  position: fixed;
+  right: max(calc(20px + env(safe-area-inset-right)), calc((100vw - var(--app-width)) / 2 + 20px));
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  z-index: 21;
+}
+.fab-menu .fab {
+  position: relative;
+  right: auto;
+  bottom: auto;
+}
+.fab-toggle svg {
+  transition: transform 0.2s ease;
+}
+.fab-menu.is-open .fab-toggle svg {
+  transform: rotate(45deg);
+}
+.fab-actions {
+  position: absolute;
+  right: 7px;
+  bottom: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+.fab-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.fab-menu.is-open .fab-actions {
+  pointer-events: auto;
+}
+.fab-menu.is-open .fab-action {
+  opacity: 1;
+  transform: none;
+}
+.fab-menu.is-open .fab-action:nth-child(2) {
+  transition-delay: 0.04s;
+}
+.fab-action-label {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(29, 38, 32, 0.18);
+}
+.fab-action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(29, 38, 32, 0.22);
+}
+.fab-action:hover .fab-action-icon,
+.fab-action:focus-visible .fab-action-icon {
+  background: var(--primary-soft);
+}
+.fab-action:focus-visible {
+  outline: none;
+}
+.fab-action:focus-visible .fab-action-label {
+  outline: 3px solid var(--accent);
+}
+.fab-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  border: 0;
+  padding: 0;
+  background: rgba(12, 16, 13, 0.28);
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fab-toggle svg,
+  .fab-action {
+    transition: none;
+  }
+}
+
+/* 검색 달력에서 피드가 없는 달 안내 */
+.calendar-empty-month {
+  margin: 0;
+  text-align: center;
+}
+
 .feed-card {
   display: flex;
   flex-direction: column;
@@ -628,6 +752,22 @@ textarea {
 .modal-head-text h2 {
   margin: 0;
   font-size: 20px;
+}
+.modal-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+/* 엄마·아빠에게만 보이는 날짜 옆 "수정하기". 글자는 작게, 누르는 영역은 넉넉하게 */
+.edit-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 6px 2px;
+  margin: -6px 0;
 }
 .modal-close {
   flex: 0 0 44px;
@@ -753,21 +893,24 @@ textarea {
 .comment-main {
   flex: 1;
 }
-.comment-remove {
-  align-self: center;
-  flex: 0 0 auto;
-  height: 32px;
-  padding: 0 10px;
-  border: 1.5px solid #e2b9ac;
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--danger);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+/* 내 댓글 ⋯ 버튼: 눈에 띄지 않게 작게, 누르는 영역은 44px */
+.comment-more {
+  align-self: flex-start;
+  flex: 0 0 44px;
+  margin: -8px -10px 0 0;
+  color: var(--text-muted);
+  border-radius: 50%;
 }
-.comment-remove:hover {
-  background: var(--danger-soft);
+.comment-more:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+/* 수정 중인 댓글 강조 */
+.comment.is-editing {
+  margin: -8px -10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--primary-soft);
 }
 .comment.is-deleted {
   align-items: center;
@@ -801,6 +944,73 @@ textarea {
   padding: 12px 14px 14px;
   border-top: 1px solid var(--divider);
   background: var(--surface);
+}
+/* 댓글 수정 중: 입력칸 위 안내 줄 (입력칸과 한 덩어리로 보이게 위 경계선은 안내 줄이 가진다) */
+.comment-edit-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 0 20px;
+  border-top: 1px solid var(--divider);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.comment-edit-bar span {
+  flex: 1;
+}
+.comment-edit-cancel {
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.comment-form.is-editing {
+  border-top: 0;
+  padding-top: 6px;
+}
+
+/* ⋯ 버튼 위에 뜨는 작은 메뉴 (PopoverMenu): 프로필 메뉴(.profile-menu)와 같은 카드 모양 */
+.popover-menu {
+  position: fixed;
+  z-index: 56;
+  min-width: 156px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(29, 38, 32, 0.18);
+  display: flex;
+  flex-direction: column;
+  animation: popover-in 0.12s ease-out;
+}
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+}
+.popover-menu .menu-item {
+  height: 44px;
+  width: 100%;
+}
+.menu-item.is-danger {
+  color: var(--danger);
+}
+.menu-item:focus-visible {
+  outline: none;
+  background: var(--bg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .popover-menu {
+    animation: none;
+  }
 }
 .comment-input {
   flex: 1;

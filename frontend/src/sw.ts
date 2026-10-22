@@ -102,15 +102,23 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(openApp(url));
 });
 
+/** 앱 화면(frontend/src/components/AppStatus.tsx)이 받는 메시지: 새로고침 없이 앱 안에서 이 주소로 이동 */
+interface OpenUrlMessage {
+  type: 'OPEN_URL';
+  url: string;
+}
+
 async function openApp(url: string) {
-  const target = new URL(url, self.location.origin).href;
+  const target = new URL(url, self.location.origin);
   const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  for (const client of windows) {
-    if (new URL(client.url).origin === self.location.origin) {
-      await client.focus();
-      await client.navigate(target).catch(() => undefined);
-      return;
-    }
+  const client = windows.find((c) => new URL(c.url).origin === self.location.origin);
+  if (client) {
+    // 이미 켜진 앱: 앞으로 가져온 뒤 앱 안에서 이동하라고 알린다.
+    // (client.navigate 는 아이폰 홈 화면 앱에서 동작하지 않는 경우가 있고, 화면 전체를 새로 불러온다)
+    await client.focus().catch(() => undefined);
+    client.postMessage({ type: 'OPEN_URL', url: target.pathname + target.search + target.hash } satisfies OpenUrlMessage);
+    return;
   }
-  await self.clients.openWindow(target);
+  // 꺼져 있으면 그 주소로 앱을 연다
+  await self.clients.openWindow(target.href);
 }

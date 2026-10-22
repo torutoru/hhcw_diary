@@ -123,6 +123,8 @@ async function addMissingColumns() {
   await addColumnIfMissing('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
   await addColumnIfMissing('users', 'locked_until', 'TEXT');
   await addColumnIfMissing('comments', 'deleted_at', 'TEXT');
+  // 작성자가 댓글을 고친 마지막 시각 (화면에 "수정됨" 표시)
+  await addColumnIfMissing('comments', 'edited_at', 'TEXT');
   // 리스트용 작은 사진(1080px)의 저장소 키. 기능 추가 전 사진은 비어 있고, 화면에서는 원본을 대신 쓴다
   await addColumnIfMissing('images', 'thumb_key', 'TEXT');
 }

@@ -31,7 +31,28 @@ export const HomeHeartIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
-export const BellIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+/** ⋯ 더보기 */
+export const MoreIcon = ({ size = 20, strokeWidth = 2.6 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M5 12h.01M12 12h.01M19 12h.01" />
+  </svg>
+);
+
+export const TrashIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M4 7h16M10 11v6M14 11v6" />
+    <path d="M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);
+
+export const SearchIcon =({ size = 22, strokeWidth = 2.2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </svg>
+);
+
+export const BellIcon =({ size = 20, strokeWidth = 2 }: P) => (
   <svg {...base(size, strokeWidth)}>
     <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" />
     <path d="M10 20a2 2 0 0 0 4 0" />

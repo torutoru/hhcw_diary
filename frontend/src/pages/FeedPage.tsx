@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { api } from '../api/client';
 import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import FabMenu from '../components/FabMenu';
 import FeedCard from '../components/FeedCard';
-import { HomeIcon, PencilIcon } from '../components/Icons';
+import { HomeIcon } from '../components/Icons';
 import LoadingQuotes from '../components/LoadingQuotes';
 import { NotificationCard } from '../components/NotificationSettings';
 import { APP_NAME } from '../lib/app';
@@ -13,6 +14,9 @@ import ProfileMenu from '../components/ProfileMenu';
 export interface FeedOutletContext {
   onCommentAdded: (feedId: string, comment: CommentPreview) => void;
   onCommentDeleted: (feedId: string, commentId: string) => void;
+  onCommentEdited: (feedId: string, commentId: string, body: string) => void;
+  /** 상세를 닫으면 돌아갈 화면: 메인 피드 '/' 또는 검색 달력 '/search' */
+  closeTo: string;
 }
 
 export default function FeedPage() {
@@ -84,6 +88,15 @@ export default function FeedPage() {
     );
   }, []);
 
+  // 고친 댓글은 미리보기에도 바로 반영
+  const onCommentEdited = useCallback<FeedOutletContext['onCommentEdited']>((feedId, commentId, body) => {
+    setItems((prev) =>
+      prev.map((f) =>
+        f.id === feedId ? { ...f, comments: f.comments.map((c) => (c.id === commentId ? { ...c, body } : c)) } : f,
+      ),
+    );
+  }, []);
+
   const isParent = user?.role === 'parent';
 
   return (
@@ -98,7 +111,7 @@ export default function FeedPage() {
         <ProfileMenu />
       </header>
 
-      <main className={`feed-main${isParent ? ' has-fab' : ''}`}>
+      <main className="feed-main has-fab">
         <NotificationCard />
 
         {items.map((item) => (
@@ -140,14 +153,12 @@ export default function FeedPage() {
         <div ref={sentinel} />
       </main>
 
-      {/* 피드 작성하기 (엄마·아빠만): 오른쪽 아래 떠 있는 버튼 → 달력에서 날짜를 골라 작성하거나 수정 */}
-      {isParent && (
-        <Link to="/compose" className="fab" aria-label="피드 작성하기" title="피드 작성하기">
-          <PencilIcon size={26} strokeWidth={2.2} />
-        </Link>
-      )}
+      {/* 오른쪽 아래 플로팅 버튼: 일반은 돋보기(검색), 엄마·아빠는 ＋ → 작성하기·검색하기 메뉴 */}
+      <FabMenu isParent={isParent} />
 
-      <Outlet context={{ onCommentAdded, onCommentDeleted } satisfies FeedOutletContext} />
+      <Outlet
+        context={{ onCommentAdded, onCommentDeleted, onCommentEdited, closeTo: '/' } satisfies FeedOutletContext}
+      />
     </>
   );
 }
