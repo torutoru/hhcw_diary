@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeHeartIcon } from '../components/Icons';
+import { InstallCard } from '../components/InstallGuide';
 import { loadRememberedEmail, saveRememberedEmail } from '../lib/rememberLogin';
 
 export default function LoginPage() {
@@ -79,6 +80,9 @@ export default function LoginPage() {
           회원가입
         </Link>
       </form>
+
+      {/* 홈 화면 앱 설치 안내. 아이폰은 설치 후 처음 열 때 다시 로그인해야 해서 로그인 화면에 둔다 */}
+      <InstallCard />
 
       <p className="auth-foot">
         가족만 쓰는 공간이에요.

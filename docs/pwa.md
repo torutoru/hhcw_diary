@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 홈 화면 설치 (안드로이드·아이폰) | ✅ | 주소창 없는 전체 화면, 앱 전환 화면에 "우리가족" 표시 |
 | 앱 아이콘·이름·테마 색 | ✅ | 아이콘은 사용자 제작본 적용 (아래 3번) |
-| 설치 안내 | ✅ | 메인 피드 안내 카드(닫기 가능) + 프로필 메뉴 "앱으로 설치" |
+| 설치 안내 | ✅ | **로그인 화면** 안내 카드(닫기 가능) + 로그인 후 프로필 메뉴 "앱으로 설치" |
 | 새 버전 안내 | ✅ | "새 버전이 있어요 [새로고침]" — 작성 중 강제 새로고침 방지 |
 | 빠른 실행 | ✅ | 화면 파일(JS·CSS·HTML·아이콘·글꼴)을 기기에 저장 |
 | 오프라인 | 일부 | 화면은 뜨고 "인터넷 연결이 끊겼어요" 안내. 피드·사진은 볼 수 없음 |
@@ -49,7 +49,7 @@
 | [frontend/vite.config.ts](../frontend/vite.config.ts) | `vite-plugin-pwa`: manifest(이름·색·아이콘), 서비스 워커(Workbox) 생성 |
 | [frontend/index.html](../frontend/index.html) | iOS용 `apple-touch-icon`, 앱 이름, 상태바 meta |
 | [frontend/src/lib/pwa.ts](../frontend/src/lib/pwa.ts) | 설치 가능 상태 판단(`useInstallMode`), 안드로이드 설치 창(`promptInstall`) |
-| [frontend/src/components/InstallGuide.tsx](../frontend/src/components/InstallGuide.tsx) | 메인 피드 안내 카드, 기기별 설치 방법 시트 |
+| [frontend/src/components/InstallGuide.tsx](../frontend/src/components/InstallGuide.tsx) | 로그인 화면 안내 카드, 기기별 설치 방법 시트 |
 | [frontend/src/components/AppStatus.tsx](../frontend/src/components/AppStatus.tsx) | 서비스 워커 등록, 새 버전 안내, 오프라인 안내 |
 | [netlify.toml](../netlify.toml) | `sw.js`·manifest·index.html 캐시 금지, `/assets/*` 영구 캐시 |
 
@@ -65,7 +65,7 @@
 3. 크롬이 설치 창을 준비함 → **[설치]**
 4. 아이폰·아이패드 → 공유 → 홈 화면에 추가 안내
 5. 안드로이드인데 설치 창이 아직 없음 → 크롬 메뉴(⋮) → 앱 설치 안내
-6. 그 밖(PC 등) → 안내 카드 없음
+6. 그 밖(PC) → 주소창 설치 아이콘 또는 브라우저 메뉴 → 앱 설치 안내
 
 ## 5. 확인 방법
 
@@ -77,6 +77,7 @@
   ```
   PC 크롬에서 http://localhost:4173 → 주소창 오른쪽 설치 아이콘, 개발자 도구 → Application → Manifest / Service Workers 확인
 - **휴대폰**: 서비스 워커는 HTTPS에서만 동작해서(localhost 예외), 같은 와이파이의 `http://PC주소:4173`으로는 설치가 안 됩니다. **Netlify 배포 후** 실제 주소로 확인합니다.
+- 설치 안내 카드는 **로그인 화면**에 있습니다(아이폰은 설치 후 처음 열 때 다시 로그인해야 해서, 로그인 전에 설치하는 흐름). "로그인 상태 기억하기"로 계속 로그인된 사람은 로그인 화면을 보지 않으므로 프로필 메뉴의 "앱으로 설치"로 안내합니다.
 - 설치 안내 카드를 닫은 뒤 다시 보려면 브라우저 저장소의 `hhcw.installCardDismissed` 값을 지웁니다.
 
 ## 6. 인프라 설정 (사용자 쪽에서 할 일)

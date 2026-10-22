@@ -46,7 +46,18 @@ export function InstallGuideSheet({ mode, onClose }: { mode: InstallMode; onClos
             <li className="install-note">처음 열면 한 번 다시 로그인해 주세요. "로그인 상태 기억하기"를 켜 두면 계속 유지돼요.</li>
           </ol>
         )}
-        {(mode === 'android-menu' || mode === 'none') && (
+        {mode === 'desktop' && (
+          <ol className="install-steps">
+            <li>
+              크롬·엣지 주소창 오른쪽의 <b>설치 아이콘</b>을 누르거나,
+            </li>
+            <li>
+              브라우저 메뉴(<b>⋮</b> 또는 <b>⋯</b>)에서 <b>앱 설치</b> / <b>이 사이트를 앱으로 설치</b>를 눌러요.
+            </li>
+            <li className="install-note">휴대폰에서는 사파리(아이폰)나 크롬(안드로이드)으로 이 사이트를 열면 홈 화면에 설치할 수 있어요.</li>
+          </ol>
+        )}
+        {mode === 'android-menu' && (
           <ol className="install-steps">
             <li>크롬 오른쪽 위의 <b>⋮</b> 메뉴를 눌러요.</li>
             <li>
@@ -65,13 +76,13 @@ export function InstallGuideSheet({ mode, onClose }: { mode: InstallMode; onClos
   );
 }
 
-/** 메인 피드 맨 위의 설치 안내 카드. 닫으면 이 기기에서는 다시 안 보인다 (메뉴에서는 계속 가능) */
+/** 로그인 화면의 설치 안내 카드. 닫으면 이 기기에서는 다시 안 보인다 (로그인 후 프로필 메뉴에서는 계속 가능) */
 export function InstallCard() {
   const mode = useInstallMode();
   const [hidden, setHidden] = useState(isInstallCardDismissed);
   const [guide, setGuide] = useState(false);
 
-  if (hidden || mode === 'installed' || mode === 'none') return null;
+  if (hidden || mode === 'installed') return null;
 
   async function onInstall() {
     if (mode === 'prompt') await promptInstall();

@@ -14,7 +14,7 @@ const notify = () => listeners.forEach((l) => l());
 /** main.tsx 에서 앱 시작 전에 한 번 호출. 이벤트가 화면보다 먼저 올 수 있어서 일찍 붙인다 */
 export function listenForInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
-    // 크롬 기본 설치 배너 대신 우리 안내 카드·메뉴에서 설치 창을 띄운다
+    // 크롬 기본 설치 배너 대신 로그인 화면 안내 카드·프로필 메뉴에서 설치 창을 띄운다
     e.preventDefault();
     deferred = e as BeforeInstallPromptEvent;
     notify();
@@ -57,9 +57,9 @@ function isInAppBrowser() {
  * - prompt: 안드로이드 크롬 등 → 설치 창을 바로 띄울 수 있음
  * - ios: 공유 → 홈 화면에 추가 (사파리·크롬)
  * - android-menu: 안드로이드인데 설치 창이 아직 준비 안 됨 → 크롬 메뉴에서 설치
- * - none: PC 등 안내가 필요 없는 환경
+ * - desktop: PC 인데 설치 창이 아직 준비 안 됨 (개발 서버 등) → 주소창 설치 아이콘·메뉴 안내
  */
-export type InstallMode = 'installed' | 'inapp' | 'prompt' | 'ios' | 'android-menu' | 'none';
+export type InstallMode = 'installed' | 'inapp' | 'prompt' | 'ios' | 'android-menu' | 'desktop';
 
 function getMode(): InstallMode {
   if (installed || isStandalone()) return 'installed';
@@ -67,7 +67,7 @@ function getMode(): InstallMode {
   if (deferred) return 'prompt';
   if (isIOS()) return 'ios';
   if (isAndroid()) return 'android-menu';
-  return 'none';
+  return 'desktop';
 }
 
 export function useInstallMode() {
@@ -77,7 +77,7 @@ export function useInstallMode() {
       return () => listeners.delete(cb);
     },
     getMode,
-    () => 'none' as InstallMode,
+    () => 'desktop' as InstallMode,
   );
 }
 
@@ -92,8 +92,9 @@ export async function promptInstall() {
   return outcome === 'accepted';
 }
 
-// 메인 피드의 설치 안내 카드를 닫았는지 (기기별로 기억)
-const DISMISS_KEY = 'hhcw.installCardDismissed';
+// 로그인 화면의 설치 안내 카드를 닫았는지 (기기별로 기억).
+// v2: 카드를 메인 피드에서 로그인 화면으로 옮기면서, 예전에 닫은 기록과 상관없이 한 번 다시 보이게 함
+const DISMISS_KEY = 'hhcw.installCardDismissed.v2';
 
 export function isInstallCardDismissed() {
   try {

@@ -73,7 +73,7 @@ export default function ProfileMenu() {
               가족 구성원 관리
             </Link>
           )}
-          {installMode !== 'installed' && installMode !== 'none' && (
+          {installMode !== 'installed' && (
             <button type="button" className="menu-item" onClick={onInstall}>
               <DownloadIcon />
               앱으로 설치
