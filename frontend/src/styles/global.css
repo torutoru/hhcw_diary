@@ -470,10 +470,41 @@ textarea {
   flex-direction: column;
   gap: 16px;
 }
-.write-btn {
-  height: 56px;
-  border-radius: 16px;
-  font-size: 16px;
+/* 플로팅 버튼에 마지막 카드가 가리지 않게 */
+.feed-main.has-fab {
+  padding-bottom: 112px;
+}
+
+/* 피드 작성하기 플로팅 버튼 (디자인: 62px 원, 오른쪽 20px · 아래 28px).
+   넓은 화면에서도 가운데 앱 영역(최대 480px)의 오른쪽 아래에 붙는다 */
+.fab {
+  position: fixed;
+  right: max(calc(20px + env(safe-area-inset-right)), calc((100vw - var(--app-width)) / 2 + 20px));
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  z-index: 20;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 20px rgba(29, 38, 32, 0.28),
+    0 2px 6px rgba(29, 38, 32, 0.18);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.fab:hover {
+  background: var(--primary-hover);
+  color: #fff;
+}
+.fab:active {
+  transform: scale(0.94);
+}
+.fab:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .feed-card {

@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import FeedCard from '../components/FeedCard';
-import { HomeIcon, PlusIcon } from '../components/Icons';
+import { HomeIcon, PencilIcon } from '../components/Icons';
 import { NotificationCard } from '../components/NotificationSettings';
 import { APP_NAME } from '../lib/app';
 import ProfileMenu from '../components/ProfileMenu';
@@ -94,16 +94,8 @@ export default function FeedPage() {
         <ProfileMenu />
       </header>
 
-      <main className="feed-main">
+      <main className={`feed-main${isParent ? ' has-fab' : ''}`}>
         <NotificationCard />
-
-        {/* 달력에서 날짜를 골라 작성하거나 수정한다 */}
-        {isParent && (
-          <Link to="/compose" className="btn write-btn btn-primary">
-            <PlusIcon />
-            피드 작성하기
-          </Link>
-        )}
 
         {items.map((item) => (
           <FeedCard key={item.id} item={item} />
@@ -132,6 +124,13 @@ export default function FeedPage() {
         {loading && <div className="feed-status">불러오는 중…</div>}
         <div ref={sentinel} />
       </main>
+
+      {/* 피드 작성하기 (엄마·아빠만): 오른쪽 아래 떠 있는 버튼 → 달력에서 날짜를 골라 작성하거나 수정 */}
+      {isParent && (
+        <Link to="/compose" className="fab" aria-label="피드 작성하기" title="피드 작성하기">
+          <PencilIcon size={26} strokeWidth={2.2} />
+        </Link>
+      )}
 
       <Outlet context={{ onCommentAdded, onCommentDeleted } satisfies FeedOutletContext} />
     </>
