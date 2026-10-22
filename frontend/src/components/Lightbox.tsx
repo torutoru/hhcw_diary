@@ -25,6 +25,14 @@ const clientX = (e: TouchEvent | MouseEvent) =>
   'changedTouches' in e ? (e.changedTouches[0]?.clientX ?? 0) : e.clientX;
 
 /**
+ * 확대를 원래 크기로 되돌린다.
+ * resetTransform(0)은 값만 바로 바꾸고 진행 중인 애니메이션(손을 뗀 뒤 위치 맞춤 등)을 멈추지 않아서,
+ * 그 애니메이션이 다음 프레임에 예전 확대 값을 다시 적용한다(사용자 제보: 돌아온 사진이 확대된 채로 보임).
+ * 1ms 로 부르면 라이브러리가 기존 애니메이션을 먼저 멈추고 되돌린다.
+ */
+const resetZoom = (ref: ReactZoomPanPinchContentRef | null | undefined) => ref?.resetTransform(1);
+
+/**
  * 피드 상세의 사진을 전체 화면으로 크게 보기.
  * - 확대 안 함: 가로 스와이프(scroll-snap)로 이전·다음 사진
  * - 확대 중(핀치·두 번 탭·휠): 끌어서 사진 안 이동, 사진 넘기기는 멈춤
@@ -44,7 +52,7 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
     const next = Math.max(0, Math.min(photos.length - 1, i));
     if (next === index) return;
     // 확대를 풀고 넘긴다 (다른 사진은 항상 원래 크기에서 시작)
-    zoomRefs.current[index]?.resetTransform(0);
+    resetZoom(zoomRefs.current[index]);
     setZoomed(false);
     el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
   };
@@ -70,12 +78,11 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey, true);
   });
 
-  // 사진이 바뀌면 지금 사진을 뺀 모든 사진의 확대를 초기화한다.
-  // 스와이프·가장자리 끌기·버튼·방향키 어떤 방법으로 넘겨도 새 사진은 항상 원래 크기에서 시작
+  // 사진이 바뀌면 (새로 보게 된 사진을 포함해) 모든 사진의 확대를 초기화한다.
+  // 스와이프·가장자리 끌기·버튼·방향키 어떤 방법으로 넘겨도, 다시 돌아와도 항상 원래 크기에서 시작
+  // (넘기는 도중 시작된 위치 맞춤 애니메이션이 있으면 resetZoom 이 멈추고 되돌린다)
   useEffect(() => {
-    zoomRefs.current.forEach((ref, i) => {
-      if (i !== index) ref?.resetTransform(0);
-    });
+    zoomRefs.current.forEach(resetZoom);
     setZoomed(false);
   }, [index]);
 
@@ -91,7 +98,7 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
     if (!el) return;
     const i = Math.round(el.scrollLeft / el.clientWidth);
     if (i !== index) {
-      zoomRefs.current[index]?.resetTransform(0);
+      resetZoom(zoomRefs.current[index]);
       setZoomed(false);
       setIndex(i);
     }
