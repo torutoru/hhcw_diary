@@ -5,6 +5,7 @@ import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import FeedCard from '../components/FeedCard';
 import { HomeIcon, PlusIcon } from '../components/Icons';
+import { NotificationCard } from '../components/NotificationSettings';
 import ProfileMenu from '../components/ProfileMenu';
 
 export interface FeedOutletContext {
@@ -93,6 +94,8 @@ export default function FeedPage() {
       </header>
 
       <main className="feed-main">
+        <NotificationCard />
+
         {/* 달력에서 날짜를 골라 작성하거나 수정한다 */}
         {isParent && (
           <Link to="/compose" className="btn write-btn btn-primary">

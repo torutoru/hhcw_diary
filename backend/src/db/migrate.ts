@@ -55,6 +55,18 @@ CREATE TABLE IF NOT EXISTS storage_deletions (
   last_tried_at TEXT NOT NULL
 );
 
+-- 웹 푸시 구독 (기기·브라우저마다 하나). endpoint 가 기기를 구분한다
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  endpoint     TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id),
+  p256dh       TEXT NOT NULL,
+  auth         TEXT NOT NULL,
+  user_agent   TEXT,
+  created_at   TEXT NOT NULL,
+  last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
+
 CREATE TABLE IF NOT EXISTS comments (
   id         TEXT PRIMARY KEY,
   feed_id    TEXT NOT NULL REFERENCES feeds(id),

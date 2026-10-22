@@ -68,6 +68,16 @@ Comment = { id, author /* 호칭 */, authorRelation /* 가족관계 */, body, cr
 | DELETE | `/images/:id` 👪 | 작성 화면에서 뺀 사진 즉시 삭제 → `{ ok }`. **내가 올렸고 아직 피드에 연결되지 않은** 사진만. 남의 사진 403, 피드에 연결된 사진 409, 없으면 404. R2 삭제가 실패해도 200 (나중에 재시도) |
 | GET | `/images/file/*` 🔒 | **로컬 개발 전용** (R2 설정이 없을 때만 등록됨) |
 
+## 푸시 알림
+
+| 메서드 | 경로 | 설명 |
+| --- | --- | --- |
+| GET | `/push/public-key` | `{ publicKey }` — 서버에 VAPID 키가 없으면 `null` (화면에서 알림 기능 숨김) |
+| POST | `/push/subscribe` 🔒 | 이 기기 알림 켜기. 브라우저의 `PushSubscription.toJSON()` 그대로 (`{ endpoint, keys: { p256dh, auth } }`) → 201. 같은 기기를 다른 계정으로 구독하면 주인이 바뀜. 키가 없으면 503 |
+| DELETE | `/push/subscribe` 🔒 | 이 기기 알림 끄기 `{ endpoint }` (로그아웃 시에도 호출) |
+
+발송 시점: 피드 작성(올린 사람 제외 모두), 댓글 작성(피드 작성자 + 그 피드에 댓글 단 사람, 본인 제외). 알림 내용 형식은 `backend/src/lib/push.ts`의 `PushPayload`.
+
 ## 기타
 
 | 메서드 | 경로 | 설명 |

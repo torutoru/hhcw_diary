@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { BackIcon } from '../components/Icons';
+import { NotificationSettings } from '../components/NotificationSettings';
 import { Avatar, PersonName } from '../components/Person';
 
 const TOAST_MS = 3000;
@@ -92,6 +93,8 @@ export default function MyInfoPage() {
               {user.role === 'parent' ? ' 엄마·아빠는 피드 작성과 구성원 관리를 할 수 있어요.' : ''}
             </span>
           </div>
+
+          <NotificationSettings />
         </div>
 
         {error && (

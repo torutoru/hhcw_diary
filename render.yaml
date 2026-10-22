@@ -39,3 +39,10 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      # 웹 푸시 알림. 키 생성: cd backend && npx web-push generate-vapid-keys
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false

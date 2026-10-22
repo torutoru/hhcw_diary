@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { deleteStoredFiles } from '../lib/fileCleanup.js';
+import { commentRecipients, displayName, feedRecipients, sendPush, shortDate } from '../lib/push.js';
 import { storage } from '../lib/storage.js';
 import { nowISO, todayKST } from '../lib/time.js';
 import { requireParent, requireUser } from '../plugins/auth.js';
@@ -224,6 +225,25 @@ export async function feedRoutes(app: FastifyInstance) {
       ],
       'write',
     );
+
+    // 새 피드 알림: 올린 사람을 뺀 가족 모두 (응답을 기다리게 하지 않는다)
+    const me = req.currentUser!;
+    void feedRecipients(me.id)
+      .then((to) =>
+        sendPush(
+          to,
+          {
+            kind: 'feed',
+            title: '우리가족',
+            body: `${displayName(me.nickname, me.relation)} 님이 ${shortDate(date)} 피드를 올렸어요`,
+            url: `/feeds/${id}`,
+            tag: `feed-${id}`,
+          },
+          req.log,
+        ),
+      )
+      .catch((err) => req.log.error(err));
+
     return reply.code(201).send({ feed: await feedDetail(id) });
   });
 
@@ -300,8 +320,13 @@ export async function feedRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { id: string } }>('/api/feeds/:id/comments', { preHandler: requireUser }, async (req, reply) => {
     const { body } = commentBody.parse(req.body);
-    const feed = await db.execute({ sql: 'SELECT id FROM feeds WHERE id = ?', args: [req.params.id] });
-    if (!feed.rows[0]) throw notFound('피드를 찾을 수 없어요.');
+    const feed = await db.execute({
+      sql: `SELECT f.feed_date, u.nickname, u.relation FROM feeds f JOIN users u ON u.id = f.author_id
+            WHERE f.id = ?`,
+      args: [req.params.id],
+    });
+    const feedRow = feed.rows[0];
+    if (!feedRow) throw notFound('피드를 찾을 수 없어요.');
 
     const comment = {
       id: randomUUID(),
@@ -316,6 +341,29 @@ export async function feedRoutes(app: FastifyInstance) {
       sql: 'INSERT INTO comments (id, feed_id, author_id, body, created_at) VALUES (?, ?, ?, ?, ?)',
       args: [comment.id, req.params.id, req.currentUser!.id, body, comment.createdAt],
     });
+
+    // 새 댓글 알림: 피드 작성자 + 이 피드에 댓글을 단 사람 (본인 제외). 같은 피드 알림은 하나로 묶인다
+    const me = req.currentUser!;
+    const feedLabel = `${displayName(String(feedRow.nickname), String(feedRow.relation))} 님의 ${shortDate(
+      String(feedRow.feed_date),
+    )} 피드`;
+    void commentRecipients(req.params.id, me.id)
+      .then((to) =>
+        sendPush(
+          to,
+          {
+            kind: 'comment',
+            title: '우리가족',
+            body: `${displayName(me.nickname, me.relation)}: ${body.length > 60 ? `${body.slice(0, 60)}…` : body}`,
+            url: `/feeds/${req.params.id}`,
+            tag: `comments-${req.params.id}`,
+            feedLabel,
+          },
+          req.log,
+        ),
+      )
+      .catch((err) => req.log.error(err));
+
     return reply.code(201).send({ comment });
   });
 }

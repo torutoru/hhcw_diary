@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api } from '../api/client';
 import type { User } from '../api/types';
+import { disablePush, resyncPush } from '../lib/notifications';
 
 interface AuthState {
   user: User | null;
@@ -19,7 +20,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     api
       .me()
-      .then((res) => setUser(res.user))
+      .then((res) => {
+        setUser(res.user);
+        resyncPush();
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -27,9 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
     const res = await api.login(email, password, remember);
     setUser(res.user);
+    // 이 기기에서 전에 알림을 켰다면 지금 로그인한 계정으로 다시 연결
+    resyncPush();
   }, []);
 
   const logout = useCallback(async () => {
+    // 로그아웃한 기기로 알림이 가지 않게 먼저 해제 (서버 요청에 로그인이 필요해서 로그아웃 전에)
+    await disablePush().catch(() => undefined);
     await api.logout().catch(() => undefined);
     setUser(null);
   }, []);

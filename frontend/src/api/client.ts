@@ -60,6 +60,12 @@ export const api = {
   members: () => request<{ me: Member; members: Member[] }>('/members'),
   removeMember: (id: string) => request<{ ok: true; nickname: string }>(`/members/${id}`, { method: 'DELETE' }),
 
+  pushPublicKey: () => request<{ publicKey: string | null }>('/push/public-key'),
+  pushSubscribe: (sub: PushSubscriptionJSON) =>
+    request<{ ok: true }>('/push/subscribe', { method: 'POST', body: json(sub) }),
+  pushUnsubscribe: (endpoint: string) =>
+    request<{ ok: true }>('/push/subscribe', { method: 'DELETE', body: json({ endpoint }) }),
+
   deleteImage: (id: string) => request<{ ok: true }>(`/images/${id}`, { method: 'DELETE' }),
   uploadImage: (file: Blob, filename: string) => {
     const form = new FormData();

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { clearBadgeAndNotifications } from '../lib/notifications';
 
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
 
@@ -21,6 +22,16 @@ export default function AppStatus() {
       });
     },
   });
+
+  // 앱을 열거나 다시 돌아오면 아이콘 배지(새 소식 표시)와 남은 알림을 지운다
+  useEffect(() => {
+    const clear = () => {
+      if (document.visibilityState === 'visible') clearBadgeAndNotifications();
+    };
+    clear();
+    document.addEventListener('visibilitychange', clear);
+    return () => document.removeEventListener('visibilitychange', clear);
+  }, []);
 
   const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {

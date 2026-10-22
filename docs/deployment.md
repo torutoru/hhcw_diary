@@ -57,6 +57,7 @@ npm run dev
    | `R2_PUBLIC_URL` | (선택) |
    | `ADMIN_EMAIL` | 승인 메일을 받을 관리자 메일 |
    | `RESEND_API_KEY`, `MAIL_FROM` | 3단계 값 |
+   | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | 푸시 알림 키 ([pwa.md](pwa.md#운영-설정-render) 7번). 비우면 알림만 꺼짐 |
 
 3. 배포가 끝나면 `https://<서비스>.onrender.com/api/health` 가 `{"ok":true}` 를 돌려주는지 확인합니다.
 

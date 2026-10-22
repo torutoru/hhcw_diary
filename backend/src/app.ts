@@ -10,6 +10,7 @@ import { authRoutes } from './routes/auth.js';
 import { feedRoutes } from './routes/feeds.js';
 import { imageRoutes } from './routes/images.js';
 import { memberRoutes } from './routes/members.js';
+import { pushRoutes } from './routes/push.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -51,6 +52,7 @@ export async function buildApp() {
   await app.register(feedRoutes);
   await app.register(imageRoutes);
   await app.register(memberRoutes);
+  await app.register(pushRoutes);
 
   return app;
 }

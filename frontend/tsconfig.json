@@ -13,5 +13,7 @@
     "noUnusedParameters": true,
     "types": ["vite/client", "vite-plugin-pwa/react"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts"],
+  // 서비스 워커는 브라우저 창이 아니라 워커에서 돌아서 tsconfig.sw.json 으로 따로 검사한다
+  "exclude": ["src/sw.ts"]
 }

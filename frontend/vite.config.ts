@@ -14,6 +14,14 @@ export default defineConfig({
       // (작성 중인 피드가 갑자기 새로고침되지 않게)
       registerType: 'prompt',
       injectRegister: false,
+      // 푸시 알림을 받으려고 서비스 워커를 직접 작성한다 (src/sw.ts). 캐시 규칙도 그 파일에 있다
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
+        // 화면 파일(JS·CSS·HTML·아이콘)만 미리 저장해서 두 번째 실행부터 빨리 뜨게 한다
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+      },
       manifest: {
         id: '/',
         name: '우리가족',
@@ -32,32 +40,6 @@ export default defineConfig({
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/icons/maskable-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
           { src: '/icons/maskable-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        // 화면 파일(JS·CSS·HTML·아이콘)만 미리 저장해서 두 번째 실행부터 빨리 뜨게 한다
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
-        // 주소창에 직접 들어온 화면은 저장된 index.html 로. API 는 절대 서비스 워커가 가로채지 않는다
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          // 글꼴은 거의 바뀌지 않으니 오래 저장
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'google-fonts-css' },
-          },
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-files',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          // API 응답과 사진(R2 서명 URL)은 캐시하지 않는다: 오래된 피드·만료된 사진 주소를 보여주지 않게
         ],
       },
     }),

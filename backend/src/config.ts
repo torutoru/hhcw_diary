@@ -29,6 +29,11 @@ const schema = z.object({
   ADMIN_EMAIL: z.string().email(),
   RESEND_API_KEY: optional,
   MAIL_FROM: z.string().default('우리가족 <onboarding@resend.dev>'),
+
+  // 웹 푸시(새 피드·댓글 알림). 비우면 알림 기능이 꺼진다. 키 생성: npx web-push generate-vapid-keys
+  VAPID_PUBLIC_KEY: optional,
+  VAPID_PRIVATE_KEY: optional,
+  VAPID_SUBJECT: optional, // 예: mailto:admin@example.com
 });
 
 const parsed = schema.safeParse(process.env);

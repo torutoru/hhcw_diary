@@ -864,6 +864,29 @@ textarea {
   font-size: 13px;
   color: var(--text-muted);
 }
+.field-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+.notify-box {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.notify-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.notify-btn {
+  height: 46px;
+  font-size: 15px;
+}
 .offline-banner {
   position: fixed;
   top: env(safe-area-inset-top);

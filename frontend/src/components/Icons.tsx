@@ -31,7 +31,14 @@ export const HomeHeartIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
-export const DownloadIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+export const BellIcon = ({ size = 20, strokeWidth = 2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </svg>
+);
+
+export const DownloadIcon =({ size = 20, strokeWidth = 2 }: P) => (
   <svg {...base(size, strokeWidth)}>
     <path d="M12 4v11M7 10l5 5 5-5" />
     <path d="M5 20h14" />

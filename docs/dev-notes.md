@@ -91,6 +91,10 @@
 - 서비스 워커가 `/api/*`를 가로채지 않게 `navigateFallbackDenylist`를 꼭 유지합니다. 승인 메일 링크가 서버로 가야 합니다.
 - 사이트 주소를 바꾸면 설치된 앱을 모두 다시 설치해야 합니다.
 
+- 서비스 워커는 `src/sw.ts`를 직접 작성하는 방식(injectManifest)입니다. 이 파일은 워커 환경이라 `tsconfig.sw.json`으로 따로 타입 검사합니다(`npm run typecheck`가 둘 다 실행).
+- 푸시 알림 키(VAPID)는 **한 번 정하면 바꾸지 않습니다.** 바꾸면 모든 기기 구독이 무효가 됩니다. 로컬 `backend/.env`에는 로컬 전용 키, Render에는 별도 키.
+- 푸시 받는 사람 규칙은 로컬 가짜 HTTPS 푸시 서버로 시험할 수 있습니다: 자체 서명 인증서 + 테스트 서버 `.env`에 `NODE_TLS_REJECT_UNAUTHORIZED=0`, 구독은 `crypto.createECDH('prime256v1')`로 만든 가짜 키로 등록.
+
 ### Fastify
 - `disableRequestLogging: true`가 현재 버전에서 deprecation 경고(FSTDEP023)를 냅니다. Fastify 5에서는 동작하고, 6으로 올릴 때 바꿔야 합니다.
 

@@ -12,7 +12,7 @@
 | 새 버전 안내 | ✅ | "새 버전이 있어요 [새로고침]" — 작성 중 강제 새로고침 방지 |
 | 빠른 실행 | ✅ | 화면 파일(JS·CSS·HTML·아이콘·글꼴)을 기기에 저장 |
 | 오프라인 | 일부 | 화면은 뜨고 "인터넷 연결이 끊겼어요" 안내. 피드·사진은 볼 수 없음 |
-| 푸시 알림 | ❌ (다음 단계) | 백엔드 작업 필요. iOS는 16.4+ & 홈 화면 설치 시에만 |
+| 푸시 알림 + 아이콘 배지 | ✅ | 아래 7번. iOS는 16.4+ & 홈 화면 설치 시에만 |
 | 아이폰 시작 화면(스플래시) 이미지 | ❌ | 기기별 이미지가 많이 필요. 지금은 잠깐 배경색만 보임 |
 
 ## 2. 플랫폼별 동작
@@ -46,7 +46,8 @@
 
 | 파일 | 내용 |
 | --- | --- |
-| [frontend/vite.config.ts](../frontend/vite.config.ts) | `vite-plugin-pwa`: manifest(이름·색·아이콘), 서비스 워커(Workbox) 생성 |
+| [frontend/vite.config.ts](../frontend/vite.config.ts) | `vite-plugin-pwa`(injectManifest): manifest(이름·색·아이콘), `src/sw.ts` 빌드 |
+| [frontend/src/sw.ts](../frontend/src/sw.ts) | 서비스 워커: 화면 파일·글꼴 캐시, 푸시 알림 표시·묶기, 아이콘 배지, 알림 클릭 시 피드 열기 |
 | [frontend/index.html](../frontend/index.html) | iOS용 `apple-touch-icon`, 앱 이름, 상태바 meta |
 | [frontend/src/lib/pwa.ts](../frontend/src/lib/pwa.ts) | 설치 가능 상태 판단(`useInstallMode`), 안드로이드 설치 창(`promptInstall`) |
 | [frontend/src/components/InstallGuide.tsx](../frontend/src/components/InstallGuide.tsx) | 로그인 화면 안내 카드, 기기별 설치 방법 시트 |
@@ -91,4 +92,59 @@
 | Render 무료 플랜 잠들기 | 앱처럼 쓰다 보면 첫 실행 때 30초 대기가 더 답답하게 느껴질 수 있습니다. 해결하려면 유료 플랜, 또는 외부 모니터링 서비스(UptimeRobot 등)로 10~14분마다 `/api/health` 호출 | 선택 |
 | Cloudflare R2 | 추가 설정 없음 (사진은 서비스 워커가 저장하지 않음) | 없음 |
 | 앱 아이콘 | 제작 완료·적용됨 (`docs/design/pwa-icons/`) | 완료 |
-| (다음 단계) 푸시 알림 | VAPID 키 생성 후 Render 환경변수 추가, 알림 구독 DB 테이블 | 나중에 |
+| **Render: 푸시 알림 키** | 아래 7번 "운영 설정" 참고. 키가 없으면 알림 기능만 꺼지고 나머지는 정상 동작 | **필요** |
+
+## 7. 푸시 알림과 아이콘 배지
+
+### 규칙
+| 상황 | 받는 사람 |
+| --- | --- |
+| 새 피드 (지난 날짜 포함) | 올린 사람을 뺀 가족 모두 |
+| 새 댓글 | **피드 작성자 + 그 피드에 댓글을 단 사람** (방금 쓴 본인 제외, 자기 댓글을 모두 지웠으면 제외) |
+| 피드 수정, 댓글 삭제 | 알림 없음 |
+
+- 같은 피드의 댓글 알림은 하나로 묶여 "OO 님의 10월 22일 피드에 새 댓글 3개"로 덮어씁니다(`tag`).
+- 알림을 누르면 해당 피드 상세(`/feeds/:id`)가 열립니다. 이미 열린 앱이 있으면 그 창으로 이동합니다.
+- 제거된 구성원은 받지 않습니다. 못 받은 알림은 24시간 뒤 버려집니다(TTL).
+
+### 아이콘 배지
+- 알림을 받으면 서비스 워커가 `setAppBadge(1)`로 **"새 소식 있음(1)"**을 표시합니다(개수 아님).
+  - 아이폰(설치한 앱 + 알림 허용)·PC 설치 앱: 숫자 **1**
+  - 안드로이드: 크롬이 이 기능을 지원하지 않아서, 런처가 알림을 보고 점이나 숫자를 붙입니다(삼성은 기본 숫자)
+- 앱을 열거나 다시 돌아오면 배지와 알림 센터의 우리가족 알림을 지웁니다(`AppStatus`).
+- 안드로이드 상단 상태바에는 **N** 모양 아이콘(`/icons/notification-badge.png`, 흰색·투명 배경)이 보입니다.
+
+### 알림 켜기
+- **내 정보 → 알림**에서 켜고 끕니다. 메인 피드 맨 위에도 아직 안 켠 기기에 "새 피드 알림을 받아 보세요 [켜기]" 카드가 한 번 나옵니다(닫기 가능).
+- 알림 권한 요청은 반드시 버튼을 누를 때 합니다(아이폰 필수 조건).
+- 상태: 켜짐 / 꺼짐 / 차단됨(기기 설정에서 허용 필요) / 아이폰인데 설치 전(설치 후 앱에서 켜기) / 지원 안 됨
+- **기기마다** 따로 켭니다. 로그아웃하면 그 기기의 알림은 해제되고, 다시 로그인하면 이전에 켰던 기기는 자동으로 다시 연결됩니다.
+
+### 구현
+| 파일 | 내용 |
+| --- | --- |
+| [backend/src/lib/push.ts](../backend/src/lib/push.ts) | `web-push` 발송, 받는 사람 계산, 만료 구독(404/410) 삭제 |
+| [backend/src/routes/push.ts](../backend/src/routes/push.ts) | 공개 키, 구독 저장·삭제 API |
+| [backend/src/routes/feeds.ts](../backend/src/routes/feeds.ts) | 피드 작성·댓글 작성 뒤 알림 발송 (응답을 기다리게 하지 않음) |
+| [frontend/src/lib/notifications.ts](../frontend/src/lib/notifications.ts) | 상태 확인, 켜기·끄기, 로그인 시 재연결, 배지·알림 지우기 |
+| [frontend/src/components/NotificationSettings.tsx](../frontend/src/components/NotificationSettings.tsx) | 내 정보 알림 설정, 메인 피드 안내 카드 |
+
+### 운영 설정 (Render)
+1. 키 한 쌍을 만듭니다. **운영용은 로컬과 다른 키로** 만드세요.
+   ```bash
+   cd backend
+   npx web-push generate-vapid-keys
+   ```
+2. Render 환경변수에 넣습니다.
+   | 변수 | 값 |
+   | --- | --- |
+   | `VAPID_PUBLIC_KEY` | 위에서 나온 Public Key |
+   | `VAPID_PRIVATE_KEY` | 위에서 나온 Private Key (외부에 공유 금지) |
+   | `VAPID_SUBJECT` | `mailto:<관리자 메일>` |
+3. **한 번 정한 키는 바꾸지 마세요.** 키를 바꾸면 모든 기기의 알림 구독이 무효가 되어 가족들이 알림을 다시 켜야 합니다.
+4. 키가 없으면 알림 기능만 꺼지고(알림 카드·설정이 "준비되지 않았어요"로 표시) 나머지는 그대로 동작합니다.
+
+### 확인 방법
+- 알림은 **HTTPS + 서비스 워커**가 있어야 하므로, 로컬은 `npm run build` 후 `npx vite preview --port 4173`(PC 크롬)에서 확인합니다. 로컬 `backend/.env`에는 로컬 전용 키가 들어 있습니다.
+- 휴대폰은 배포 후 확인합니다. 아이폰은 **홈 화면에 설치한 앱**에서 내 정보 → 알림 켜기.
+- 받는 사람 규칙은 가짜 푸시 서버(로컬 HTTPS)로 시험했습니다: 새 피드·댓글·댓글 삭제 후·알림 끈 뒤 모두 기대대로 전달, 만료 구독 자동 삭제 확인.

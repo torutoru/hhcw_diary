@@ -75,6 +75,7 @@
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
 | `images` | `storage_key`(R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
 | `comments` | `feed_id`, `author_id`, `body`, `deleted_at`(작성자가 삭제한 시각, 본문은 비움) |
+| `push_subscriptions` | `endpoint`(기기 구분), `user_id`, `p256dh`, `auth` — 웹 푸시 구독, 만료되면 자동 삭제 |
 | `storage_deletions` | `storage_key`(삭제에 실패한 R2 경로), `attempts`, `last_error` — 정각마다 재시도 |
 
 - 이미지 파일은 R2에만 있고, DB에는 **R2 키(`images/2026-10/<uuid>.webp`)만** 저장합니다.
