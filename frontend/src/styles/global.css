@@ -381,6 +381,13 @@ textarea {
   align-items: center;
   gap: 10px;
   font-size: 21px;
+  min-width: 0;
+}
+/* 서비스 이름이 길면 말줄임 (VITE_APP_NAME) */
+.logo-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .logo-mark {
   width: 32px;

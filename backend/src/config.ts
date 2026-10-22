@@ -26,6 +26,12 @@ const schema = z.object({
   R2_BUCKET: optional,
   R2_PUBLIC_URL: optional,
 
+  // 서비스 이름: 푸시 알림 제목, 승인 메일에 쓰인다. 프론트(Netlify)의 VITE_APP_NAME 과 같게 맞춘다
+  APP_NAME: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || '우리가족'),
+
   ADMIN_EMAIL: z.string().email(),
   RESEND_API_KEY: optional,
   MAIL_FROM: z.string().default('우리가족 <onboarding@resend.dev>'),

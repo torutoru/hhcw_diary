@@ -1,11 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { AlertIcon, CheckIcon } from '../components/Icons';
+import { APP_NAME } from '../lib/app';
 
 // 관리자가 승인 메일의 링크를 누르면 백엔드가 처리 후 이 화면으로 보낸다
 const COPY: Record<string, { title: string; desc: (email: string, relation: string) => string }> = {
   success: {
     title: '가입 완료 처리되었습니다!',
-    desc: (email) => `${email || '요청자'} 님의 가입을 승인했어요.\n이제 이 이메일로 우리가족에 로그인할 수 있어요.`,
+    desc: (email) => `${email || '요청자'} 님의 가입을 승인했어요.\n이제 이 이메일로 ${APP_NAME}에 로그인할 수 있어요.`,
   },
   expired: {
     title: '승인 링크가 만료됐어요',
@@ -38,7 +39,7 @@ export default function ConfirmPage() {
       <h1 className="display">{copy.title}</h1>
       <p>{copy.desc(params.get('email') ?? '', params.get('relation') ?? '')}</p>
       <Link to="/" className="btn btn-primary">
-        우리가족 열기
+        {APP_NAME} 열기
       </Link>
     </main>
   );

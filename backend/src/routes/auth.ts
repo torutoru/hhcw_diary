@@ -91,7 +91,7 @@ export async function authRoutes(app: FastifyInstance) {
       await sendMail(
         {
           to: config.ADMIN_EMAIL,
-          subject: '[우리가족] 회원가입 요청이 들어왔어요',
+          subject: `[${config.APP_NAME}] 회원가입 요청이 들어왔어요`,
           html: approvalEmail({
             email,
             relation,

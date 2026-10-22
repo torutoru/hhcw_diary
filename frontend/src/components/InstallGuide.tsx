@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { APP_NAME, withObject } from '../lib/app';
 import {
   dismissInstallCard,
   isInstallCardDismissed,
@@ -21,7 +22,7 @@ export function InstallGuideSheet({ mode, onClose }: { mode: InstallMode; onClos
       <button type="button" className="modal-backdrop" aria-label="닫기" onClick={onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="install-title">
         <h2 id="install-title" className="display">
-          홈 화면에 우리가족 추가하기
+          홈 화면에 {APP_NAME} 추가하기
         </h2>
         {mode === 'inapp' && (
           <ol className="install-steps">
@@ -41,7 +42,7 @@ export function InstallGuideSheet({ mode, onClose }: { mode: InstallMode; onClos
               목록을 내려서 <b>홈 화면에 추가</b>를 눌러요.
             </li>
             <li>
-              오른쪽 위 <b>추가</b>를 누르면 홈 화면에 우리가족 아이콘이 생겨요.
+              오른쪽 위 <b>추가</b>를 누르면 홈 화면에 {APP_NAME} 아이콘이 생겨요.
             </li>
             <li className="install-note">처음 열면 한 번 다시 로그인해 주세요. "로그인 상태 기억하기"를 켜 두면 계속 유지돼요.</li>
           </ol>
@@ -63,7 +64,7 @@ export function InstallGuideSheet({ mode, onClose }: { mode: InstallMode; onClos
             <li>
               <b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 눌러요.
             </li>
-            <li>홈 화면에 생긴 우리가족 아이콘으로 열면 앱처럼 쓸 수 있어요.</li>
+            <li>홈 화면에 생긴 {APP_NAME} 아이콘으로 열면 앱처럼 쓸 수 있어요.</li>
           </ol>
         )}
         <div className="sheet-actions">
@@ -93,7 +94,7 @@ export function InstallCard() {
     <>
       <section className="install-card" aria-label="앱으로 설치">
         <div className="install-card-text">
-          <b>홈 화면에 우리가족을 추가해 보세요</b>
+          <b>홈 화면에 {withObject(APP_NAME)} 추가해 보세요</b>
           <span>앱처럼 바로 열 수 있어요.</span>
         </div>
         <button type="button" className="install-card-btn" onClick={onInstall}>

@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import FeedCard from '../components/FeedCard';
 import { HomeIcon, PlusIcon } from '../components/Icons';
 import { NotificationCard } from '../components/NotificationSettings';
+import { APP_NAME } from '../lib/app';
 import ProfileMenu from '../components/ProfileMenu';
 
 export interface FeedOutletContext {
@@ -88,7 +89,7 @@ export default function FeedPage() {
           <span className="logo-mark">
             <HomeIcon />
           </span>
-          우리가족
+          <span className="logo-text">{APP_NAME}</span>
         </div>
         <ProfileMenu />
       </header>

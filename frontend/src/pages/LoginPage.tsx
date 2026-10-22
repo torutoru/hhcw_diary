@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeHeartIcon } from '../components/Icons';
 import { InstallCard } from '../components/InstallGuide';
+import { APP_NAME } from '../lib/app';
 import { loadRememberedEmail, saveRememberedEmail } from '../lib/rememberLogin';
 
 export default function LoginPage() {
@@ -37,7 +38,7 @@ export default function LoginPage() {
         <div className="brand-mark">
           <HomeHeartIcon />
         </div>
-        <h1 className="display">우리가족</h1>
+        <h1 className="display">{APP_NAME}</h1>
         <p>하루 한 장, 우리 집 이야기</p>
       </div>
 

@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { APP_NAME } from '../lib/app';
 import { disablePush, enablePush, usePushStatus, type PushStatus } from '../lib/notifications';
 import { BellIcon, CloseIcon } from './Icons';
 
 const STATUS_TEXT: Record<PushStatus, string> = {
   on: '이 기기에서 새 피드·댓글 알림을 받고 있어요.',
   off: '알림을 켜면 새 피드와, 내가 댓글 단 피드의 새 댓글을 알려드려요.',
-  denied: '알림이 꺼져 있어요. 휴대폰 설정 → 알림에서 우리가족(또는 브라우저) 알림을 허용해 주세요.',
-  'needs-install': '아이폰은 홈 화면에 설치한 우리가족 앱에서만 알림을 받을 수 있어요. 설치 후 앱에서 켜 주세요.',
+  denied: `알림이 꺼져 있어요. 휴대폰 설정 → 알림에서 ${APP_NAME}(또는 브라우저) 알림을 허용해 주세요.`,
+  'needs-install': `아이폰은 홈 화면에 설치한 ${APP_NAME} 앱에서만 알림을 받을 수 있어요. 설치 후 앱에서 켜 주세요.`,
   unsupported: '이 브라우저에서는 알림을 받을 수 없어요.',
   unavailable: '알림 기능이 아직 준비되지 않았어요.',
 };

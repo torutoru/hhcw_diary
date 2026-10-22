@@ -63,6 +63,20 @@ npm run dev
 
 ## 5. Netlify (프론트엔드)
 
+### 서비스 이름 (선택)
+설치되는 앱 이름, 로그인 화면 제목, 메인 피드 헤더, 탭 제목 등에 쓰이는 이름입니다. 비우면 "우리가족"입니다.
+
+| 위치 | 변수 | 예 |
+| --- | --- | --- |
+| Netlify → Site configuration → Environment variables | `VITE_APP_NAME` | `철구네 우리가족` |
+| Netlify (선택) | `VITE_APP_SHORT_NAME` | 홈 화면 아이콘 아래 짧은 이름. 비우면 위와 같음 |
+| Render → Environment | `APP_NAME` | `철구네 우리가족` (푸시 알림 제목, 승인 메일) |
+
+- 프론트 이름은 **빌드할 때** 들어갑니다. Netlify에서 값을 바꾼 뒤에는 **Deploys → Trigger deploy**로 다시 배포해야 반영됩니다.
+- 이미 설치한 앱의 홈 화면 이름: 안드로이드는 크롬이 며칠 안에 자동으로 바꾸고, **아이폰은 바뀌지 않으므로 앱을 지우고 다시 설치**해야 합니다.
+
+### 배포
+
 1. Netlify → **Add new site → Import from Git** → 이 저장소 선택. 루트의 [netlify.toml](../netlify.toml) 이 `frontend/` 를 빌드합니다.
 2. **배포 전에** `netlify.toml` 의 `/api/*` 프록시 주소를 4단계의 Render 주소로 바꿔서 커밋합니다.
    ```toml

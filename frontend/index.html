@@ -11,7 +11,8 @@
     <!-- PWA: manifest 는 빌드 시 vite-plugin-pwa 가 자동으로 연결한다 -->
     <!-- 아이폰 홈 화면 설치용 (iOS 사파리는 manifest 아이콘 대신 이 값을 쓴다) -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="우리가족" />
+    <!-- 앱 이름 자리표시는 빌드할 때 서비스 이름(VITE_APP_NAME, 기본 "우리가족")으로 바뀐다 (vite.config.ts) -->
+    <meta name="apple-mobile-web-app-title" content="__APP_NAME__" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -22,7 +23,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap"
     />
-    <title>우리가족</title>
+    <title>__APP_NAME__</title>
   </head>
   <body>
     <div id="root"></div>

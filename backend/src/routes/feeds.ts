@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { InStatement } from '@libsql/client';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { deleteStoredFiles } from '../lib/fileCleanup.js';
@@ -234,7 +235,7 @@ export async function feedRoutes(app: FastifyInstance) {
           to,
           {
             kind: 'feed',
-            title: '우리가족',
+            title: config.APP_NAME,
             body: `${displayName(me.nickname, me.relation)} 님이 ${shortDate(date)} 피드를 올렸어요`,
             url: `/feeds/${id}`,
             tag: `feed-${id}`,
@@ -353,7 +354,7 @@ export async function feedRoutes(app: FastifyInstance) {
           to,
           {
             kind: 'comment',
-            title: '우리가족',
+            title: config.APP_NAME,
             body: `${displayName(me.nickname, me.relation)}: ${body.length > 60 ? `${body.slice(0, 60)}…` : body}`,
             url: `/feeds/${req.params.id}`,
             tag: `comments-${req.params.id}`,

@@ -10,6 +10,8 @@
 - **구성**: `frontend/`(React + Vite, Netlify) · `backend/`(Fastify, Render) · Turso(데이터) · Cloudflare R2(사진) · Resend(승인 메일)
 - **운영 주소**: 백엔드 `https://hhcw-diary.onrender.com`. Netlify가 `/api/*`를 여기로 프록시합니다 ([netlify.toml](../netlify.toml)).
 
+> **서비스 이름**은 환경변수로만 관리합니다. 프론트 `VITE_APP_NAME`(Netlify, 빌드 시 반영) + 백엔드 `APP_NAME`(Render, 알림 제목·승인 메일). 화면 코드에서는 "우리가족"을 직접 쓰지 말고 `APP_NAME`([frontend/src/lib/app.ts](../frontend/src/lib/app.ts))을 쓰고, 조사는 `withObject()`로 받침에 맞춥니다.
+
 ## 2. 지금까지 만든 기능
 
 | 커밋 | 내용 |
@@ -23,7 +25,8 @@
 | `5397639` | 작성 화면에서 뺀 사진 즉시 삭제, R2 삭제 실패를 `storage_deletions`에 기록해 서버 시작 시·매 정각 재시도 |
 | `1f0b95a` | **가족관계(권한) / 호칭(화면 이름) 분리**, 내 정보 화면(`/me`) |
 
-| (작업 중) | **PWA**: 홈 화면 설치(안드로이드·아이폰), 설치 안내, 새 버전 안내, 오프라인 안내 → [pwa.md](pwa.md). 앱 아이콘은 사용자 제작본(`docs/design/pwa-icons/`) 적용 |
+| `bb6e001`, `40dad40` | **PWA**: 홈 화면 설치(안드로이드·아이폰), 설치 안내(로그인 화면 카드 + 프로필 메뉴), 새 버전·오프라인 안내 → [pwa.md](pwa.md). 앱 아이콘은 사용자 제작본(`docs/design/pwa-icons/`) |
+| `873d484` | **푸시 알림 + 아이콘 배지**: 새 피드(올린 사람 제외 모두), 새 댓글(피드 작성자 + 댓글 단 사람), 배지 "1", 안드로이드 상태바 N. 실제 기기 수신 확인 완료 |
 
 ### 디자인 시안에 없는데 추가한 화면
 

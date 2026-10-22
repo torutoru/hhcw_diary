@@ -1,3 +1,5 @@
+import { config } from '../config.js';
+
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -28,7 +30,7 @@ export function approvalEmail(p: Params) {
 <tr><td style="padding:36px 40px">
   <table role="presentation" cellpadding="0" cellspacing="0"><tr>
     <td style="width:36px;height:36px;border-radius:11px;background:#2F6B4F;text-align:center;color:#FFFFFF;font-size:18px">&#8962;</td>
-    <td style="padding-left:10px;font-size:20px">우리가족</td>
+    <td style="padding-left:10px;font-size:20px">${escape(config.APP_NAME)}</td>
   </tr></table>
   <h1 style="margin:24px 0;font-size:28px;font-weight:400">새 가족이 가입을 요청했어요</h1>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F2EC;border-radius:14px;padding:12px 20px">
