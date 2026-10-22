@@ -70,6 +70,15 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey, true);
   });
 
+  // 사진이 바뀌면 지금 사진을 뺀 모든 사진의 확대를 초기화한다.
+  // 스와이프·가장자리 끌기·버튼·방향키 어떤 방법으로 넘겨도 새 사진은 항상 원래 크기에서 시작
+  useEffect(() => {
+    zoomRefs.current.forEach((ref, i) => {
+      if (i !== index) ref?.resetTransform(0);
+    });
+    setZoomed(false);
+  }, [index]);
+
   // 아이폰 사파리의 페이지 전체 확대를 막는다 (사진 확대는 라이브러리가 처리)
   useEffect(() => {
     const block = (e: Event) => e.preventDefault();

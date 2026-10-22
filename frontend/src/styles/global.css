@@ -1072,6 +1072,9 @@ textarea {
   z-index: 70;
   background: #0c100d;
   color: #fff;
+  /* 브라우저의 화면 전체 확대(핀치)를 막는다. 사진 확대는 react-zoom-pan-pinch 가 터치 이벤트로 따로 처리.
+     화면 전체가 확대되면 넘긴 사진까지 확대돼 보이고, 좌우 끌기가 사진 넘기기로 가 버린다 */
+  touch-action: pan-x pan-y;
 }
 .lightbox-top {
   position: absolute;
