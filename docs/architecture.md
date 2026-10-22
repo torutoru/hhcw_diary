@@ -76,7 +76,7 @@
 | `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각) |
 | `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
-| `images` | `storage_key`(R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
+| `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
 | `comments` | `feed_id`, `author_id`, `body`, `deleted_at`(작성자가 삭제한 시각, 본문은 비움) |
 | `push_subscriptions` | `endpoint`(기기 구분), `user_id`, `p256dh`, `auth` — 웹 푸시 구독, 만료되면 자동 삭제 |
 | `storage_deletions` | `storage_key`(삭제에 실패한 R2 경로), `attempts`, `last_error` — 정각마다 재시도 |
@@ -105,6 +105,22 @@
 - **브라우저 1차 축소**: 휴대폰 원본(5~10MB)을 그대로 보내지 않아 업로드가 빠릅니다. 1.5MB 이하는 그대로 보냅니다.
 - **서버 최종 변환**: Safari 등 일부 브라우저는 WebP 인코딩을 지원하지 않거나 품질이 일정하지 않아, 최종 변환은 서버에서 합니다.
 - **결과 크기**: 일반 사진은 2048px, 200~400KB 정도가 나옵니다. 압축이 가장 어려운 노이즈 이미지(4000×3000, 4.5MB JPEG)로 시험했을 때 1600×1200, 400KB가 나왔습니다. 원본이 작은 사진은 200KB보다 작을 수 있으며, 일부러 키우지 않습니다.
+### 리스트용 사진 (썸네일)
+
+업로드할 때 두 벌을 저장합니다. 피드가 많이 쌓여도 메인 피드 스크롤이 가볍도록, 카드에는 작은 사진을 씁니다.
+
+| | 원본 | 리스트용 |
+| --- | --- | --- |
+| 크기 | 긴 변 2048px, 200~400KB | 긴 변 **1080px**, 약 80~130KB (3배율 휴대폰에서 카드 폭을 선명하게 채우는 크기) |
+| R2 키 | `images/2026-10/<id>.webp` | `images/2026-10/<id>_thumb.webp` (`images.thumb_key`) |
+| 쓰는 곳 | 사진 크게 보기(라이트박스) | 메인 피드 카드, 상세 가로 스크롤, 작성 화면 미리보기 |
+
+- 휴대폰 메모리는 파일 용량이 아니라 픽셀 수만큼 씁니다(2048×1536 ≈ 12MB, 1080×810 ≈ 3.5MB).
+- 리스트용은 **이 기능 이후 업로드한 사진에만** 만듭니다. 그 전에 올린 사진은 `thumb_key`가 비어 있고, 화면에는 원본을 대신 보여줍니다(목록 `COALESCE(thumb_key, storage_key)`, 상세 `thumbUrl` = 원본). 기존 사진이 적어서 따로 변환하지 않기로 했습니다.
+- 사진을 지울 때는 두 파일을 함께 지웁니다(`imageKeys`).
+- 작성 화면은 업로드가 끝나면 미리보기를 휴대폰 원본(장당 수십 MB 메모리)에서 리스트용으로 바꿉니다.
+- 메인 피드 카드는 `content-visibility: auto`로 화면 밖 카드의 그리기를 건너뛰고, 모든 사진은 `decoding="async"`로 그립니다.
+
 ### 쓰지 않는 사진 정리
 
 | 상황 | 처리 |

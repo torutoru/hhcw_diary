@@ -21,7 +21,13 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
       </div>
 
       {item.coverUrl ? (
-        <img className="feed-cover" src={item.coverUrl} alt={`${formatFeedDate(item.date)} 대표 사진`} loading="lazy" />
+        <img
+          className="feed-cover"
+          src={item.coverUrl}
+          alt={`${formatFeedDate(item.date)} 대표 사진`}
+          loading="lazy"
+          decoding="async"
+        />
       ) : (
         <div className="feed-cover" />
       )}

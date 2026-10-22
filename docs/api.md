@@ -33,7 +33,8 @@ User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가
 
 ```ts
 FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { id, author, authorRelation, body, deleted }[] /* 앞 2개 */ }
-FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, updatedAt, commentCount, photos: { id, url, width, height }[] }
+FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, updatedAt, commentCount, photos: { id, url /* 원본 */, thumbUrl /* 리스트용 */, width, height }[] }
+// FeedListItem.coverUrl 은 리스트용 사진
 ```
 
 ## 댓글
@@ -64,7 +65,7 @@ Comment = { id, author /* 호칭 */, authorRelation /* 가족관계 */, body, cr
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| POST | `/images` 👪 | `multipart/form-data`, 필드 `file` 1개 (최대 25MB). WebP로 변환해 R2에 저장 → `{ id, url, width, height, bytes }` |
+| POST | `/images` 👪 | `multipart/form-data`, 필드 `file` 1개 (최대 25MB). 원본(2048px)과 리스트용(1080px) WebP를 R2에 저장 → `{ id, url, thumbUrl, width, height, bytes }` |
 | DELETE | `/images/:id` 👪 | 작성 화면에서 뺀 사진 즉시 삭제 → `{ ok }`. **내가 올렸고 아직 피드에 연결되지 않은** 사진만. 남의 사진 403, 피드에 연결된 사진 409, 없으면 404. R2 삭제가 실패해도 200 (나중에 재시도) |
 | GET | `/images/file/*` 🔒 | **로컬 개발 전용** (R2 설정이 없을 때만 등록됨) |
 

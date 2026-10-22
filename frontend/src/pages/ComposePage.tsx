@@ -49,7 +49,7 @@ export default function ComposePage() {
         setBody(feed.body);
         const [first, ...rest] = feed.photos.map<Slot>((p) => ({
           key: nextKey(),
-          preview: p.url,
+          preview: p.thumbUrl,
           imageId: p.id,
           status: 'done',
         }));
@@ -84,7 +84,8 @@ export default function ComposePage() {
         api.deleteImage(res.id).catch(() => undefined);
         return;
       }
-      patch = { imageId: res.id, status: 'done' };
+      // 미리보기를 휴대폰 원본(장당 수십 MB 메모리)에서 서버의 리스트용 사진으로 바꾼다
+      patch = { imageId: res.id, status: 'done', preview: res.thumbUrl };
     } catch (err) {
       patch = { status: 'error', error: (err as Error).message };
     }
@@ -171,7 +172,7 @@ export default function ComposePage() {
           </span>
           {cover ? (
             <div className="cover-preview">
-              <img src={cover.preview} alt="대표 사진" />
+              <img src={cover.preview} alt="대표 사진" decoding="async" />
               <SlotState slot={cover} />
               <button type="button" className="chip-btn" onClick={() => coverInput.current?.click()}>
                 사진 바꾸기
@@ -196,7 +197,7 @@ export default function ComposePage() {
           <div className="thumbs">
             {extras.map((s, i) => (
               <div key={s.key} className="thumb">
-                <img src={s.preview} alt={`추가 사진 ${i + 1}`} />
+                <img src={s.preview} alt={`추가 사진 ${i + 1}`} decoding="async" />
                 <SlotState slot={s} />
                 <button
                   type="button"

@@ -150,7 +150,13 @@ export default function FeedDetailModal() {
                         aria-label={`${i + 1}번째 사진 크게 보기`}
                         onClick={() => setViewing(i)}
                       >
-                        <img src={p.url} alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                        {/* 가로 스크롤은 리스트용 사진, 누르면 라이트박스에서 원본 */}
+                        <img
+                          src={p.thumbUrl}
+                          alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`}
+                          loading={i < 2 ? 'eager' : 'lazy'}
+                          decoding="async"
+                        />
                       </button>
                       <span className="carousel-index">
                         {i + 1} / {feed.photos.length}

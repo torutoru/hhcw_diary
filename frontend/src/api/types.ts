@@ -14,7 +14,10 @@ export type Member = User;
 
 export interface Photo {
   id: string;
+  /** 원본(2048px): 크게 보기 */
   url: string;
+  /** 리스트용(1080px): 상세 가로 스크롤·작성 미리보기 */
+  thumbUrl: string;
   width: number;
   height: number;
 }

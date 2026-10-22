@@ -65,3 +65,21 @@ export async function toWebp(input: Buffer): Promise<ProcessedImage> {
   // 모든 단계에서 400KB를 넘으면 가장 작은 결과를 사용
   return last!;
 }
+
+// 리스트용 사진: 메인 피드 카드·상세 가로 스크롤·작성 미리보기에 쓴다 (크게 보기는 원본).
+// 1080px = 3배율 휴대폰에서 카드 폭(약 360pt)을 선명하게 채우는 크기. 보통 80~130KB
+const THUMB_EDGE = 1080;
+const THUMB_QUALITY = 72;
+
+/** 업로드할 때 원본 WebP로 리스트용 WebP를 만든다 (기능 추가 전 사진은 만들지 않고 원본을 대신 쓴다) */
+export async function toThumb(input: Buffer): Promise<ProcessedImage> {
+  const { data, info } = await sharp(input, { failOn: 'none' })
+    .rotate()
+    .resize({ width: THUMB_EDGE, height: THUMB_EDGE, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: THUMB_QUALITY, effort: 4 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height, bytes: data.length };
+}
+
+/** 원본 키 → 리스트용 키: images/2026-10/<id>.webp → images/2026-10/<id>_thumb.webp */
+export const thumbKeyFor = (key: string) => key.replace(/\.webp$/, '_thumb.webp');

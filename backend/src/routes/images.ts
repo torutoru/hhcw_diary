@@ -3,7 +3,7 @@ import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { db } from '../db/client.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { deleteStoredFiles } from '../lib/fileCleanup.js';
-import { toWebp } from '../lib/image.js';
+import { thumbKeyFor, toThumb, toWebp } from '../lib/image.js';
 import { isR2Configured, readLocalFile, storage } from '../lib/storage.js';
 import { nowISO } from '../lib/time.js';
 import { requireParent, requireUser } from '../plugins/auth.js';
@@ -28,19 +28,25 @@ export async function imageRoutes(app: FastifyInstance) {
       throw badRequest('이 사진 형식은 읽을 수 없어요. JPG나 PNG로 올려 주세요.');
     }
 
+    // 리스트용(1080px)은 원본 WebP 로 만든다 (회전·메타데이터 제거가 이미 끝난 상태)
+    const thumb = await toThumb(out.data);
+
     const id = randomUUID();
     const now = nowISO();
     const key = `images/${now.slice(0, 7)}/${id}.webp`;
+    const thumbKey = thumbKeyFor(key);
     await storage.put(key, out.data, 'image/webp');
+    await storage.put(thumbKey, thumb.data, 'image/webp');
     await db.execute({
-      sql: `INSERT INTO images (id, storage_key, width, height, bytes, uploader_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, key, out.width, out.height, out.bytes, req.currentUser!.id, now],
+      sql: `INSERT INTO images (id, storage_key, thumb_key, width, height, bytes, uploader_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, key, thumbKey, out.width, out.height, out.bytes, req.currentUser!.id, now],
     });
 
     return reply.code(201).send({
       id,
       url: await storage.url(key),
+      thumbUrl: await storage.url(thumbKey),
       width: out.width,
       height: out.height,
       bytes: out.bytes,
@@ -51,7 +57,7 @@ export async function imageRoutes(app: FastifyInstance) {
   // (피드에 연결된 사진은 피드를 저장할 때 빠지면 지워진다)
   app.delete<{ Params: { id: string } }>('/api/images/:id', { preHandler: requireParent }, async (req) => {
     const rs = await db.execute({
-      sql: 'SELECT storage_key, feed_id, uploader_id FROM images WHERE id = ?',
+      sql: 'SELECT storage_key, thumb_key, feed_id, uploader_id FROM images WHERE id = ?',
       args: [req.params.id],
     });
     const row = rs.rows[0];
@@ -60,7 +66,7 @@ export async function imageRoutes(app: FastifyInstance) {
     if (row.feed_id !== null) throw conflict('피드에 연결된 사진은 피드를 저장할 때 정리돼요.');
 
     await db.execute({ sql: 'DELETE FROM images WHERE id = ? AND feed_id IS NULL', args: [req.params.id] });
-    await deleteStoredFiles([String(row.storage_key)], req.log);
+    await deleteStoredFiles(imageKeys(row), req.log);
     return { ok: true };
   });
 
@@ -78,7 +84,7 @@ export async function imageRoutes(app: FastifyInstance) {
 export async function cleanupOrphanImages(log: FastifyBaseLogger) {
   const cutoff = new Date(Date.now() - ORPHAN_TTL_MS).toISOString();
   const rs = await db.execute({
-    sql: 'SELECT id, storage_key FROM images WHERE feed_id IS NULL AND created_at < ?',
+    sql: 'SELECT id, storage_key, thumb_key FROM images WHERE feed_id IS NULL AND created_at < ?',
     args: [cutoff],
   });
   if (!rs.rows.length) return;
@@ -87,9 +93,12 @@ export async function cleanupOrphanImages(log: FastifyBaseLogger) {
     sql: `DELETE FROM images WHERE feed_id IS NULL AND id IN (${rs.rows.map(() => '?').join(',')})`,
     args: rs.rows.map((r) => r.id),
   });
-  await deleteStoredFiles(
-    rs.rows.map((r) => String(r.storage_key)),
-    log,
-  );
+  await deleteStoredFiles(rs.rows.flatMap(imageKeys), log);
   log.info(`연결되지 않은 사진 ${rs.rows.length}장 정리`);
+}
+
+/** 사진 행의 저장소 파일들 (원본 + 리스트용) */
+export function imageKeys(row: Record<string, unknown>) {
+  const keys = [row.storage_key, row.thumb_key].filter((k): k is string => typeof k === 'string' && k.length > 0);
+  return [...new Set(keys)];
 }

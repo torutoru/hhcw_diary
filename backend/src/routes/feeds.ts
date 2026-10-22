@@ -6,6 +6,7 @@ import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { deleteStoredFiles } from '../lib/fileCleanup.js';
+import { imageKeys } from './images.js';
 import { commentRecipients, displayName, feedRecipients, sendPush, shortDate } from '../lib/push.js';
 import { storage } from '../lib/storage.js';
 import { nowISO, todayKST } from '../lib/time.js';
@@ -52,13 +53,16 @@ const commentBody = z.object({
 
 async function feedPhotos(feedId: string) {
   const rs = await db.execute({
-    sql: 'SELECT id, storage_key, width, height FROM images WHERE feed_id = ? ORDER BY position',
+    sql: 'SELECT id, storage_key, thumb_key, width, height FROM images WHERE feed_id = ? ORDER BY position',
     args: [feedId],
   });
   return Promise.all(
     rs.rows.map(async (r) => ({
       id: String(r.id),
+      // 원본(2048px): 크게 보기
       url: await storage.url(String(r.storage_key)),
+      // 리스트용(1080px): 상세 가로 스크롤·작성 미리보기. 아직 없으면 원본
+      thumbUrl: await storage.url(String(r.thumb_key ?? r.storage_key)),
       width: Number(r.width),
       height: Number(r.height),
     })),
@@ -105,7 +109,7 @@ async function photoStatements(feedId: string, imageIds: string[]) {
   if (rs.rows.length !== imageIds.length) throw badRequest('사진 정보가 올바르지 않아요. 다시 올려 주세요.');
 
   const removed = await db.execute({
-    sql: `SELECT id, storage_key FROM images WHERE feed_id = ? AND id NOT IN (${placeholders})`,
+    sql: `SELECT id, storage_key, thumb_key FROM images WHERE feed_id = ? AND id NOT IN (${placeholders})`,
     args: [feedId, ...imageIds],
   });
 
@@ -116,7 +120,7 @@ async function photoStatements(feedId: string, imageIds: string[]) {
   for (const r of removed.rows) {
     stmts.push({ sql: 'DELETE FROM images WHERE id = ?', args: [r.id] });
   }
-  return { stmts, removedKeys: removed.rows.map((r) => String(r.storage_key)) };
+  return { stmts, removedKeys: removed.rows.flatMap(imageKeys) };
 }
 
 export async function feedRoutes(app: FastifyInstance) {
@@ -125,7 +129,9 @@ export async function feedRoutes(app: FastifyInstance) {
     const { before, limit } = listQuery.parse(req.query);
     const rs = await db.execute({
       sql: `SELECT f.id, f.feed_date,
-              (SELECT storage_key FROM images i WHERE i.feed_id = f.id ORDER BY position LIMIT 1) AS cover_key,
+              -- 메인 피드 카드는 리스트용 사진(1080px). 아직 없으면 원본
+              (SELECT COALESCE(thumb_key, storage_key) FROM images i WHERE i.feed_id = f.id ORDER BY position LIMIT 1)
+                AS cover_key,
               (SELECT COUNT(*) FROM images i WHERE i.feed_id = f.id) AS photo_count,
               (SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id) AS comment_count
             FROM feeds f

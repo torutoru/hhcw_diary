@@ -120,6 +120,8 @@ async function addMissingColumns() {
   await splitRelationAndNickname();
   await addColumnIfMissing('users', 'removed_at', 'TEXT');
   await addColumnIfMissing('comments', 'deleted_at', 'TEXT');
+  // 리스트용 작은 사진(1080px)의 저장소 키. 기능 추가 전 사진은 비어 있고, 화면에서는 원본을 대신 쓴다
+  await addColumnIfMissing('images', 'thumb_key', 'TEXT');
 }
 
 export async function migrate(log: (msg: string) => void) {

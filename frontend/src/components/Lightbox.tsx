@@ -61,7 +61,7 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
       <div className="lightbox-track" ref={track} onScroll={onScroll}>
         {photos.map((p, i) => (
           <div key={p.id} className="lightbox-slide">
-            <img src={p.url} alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`} />
+            <img src={p.url} alt={i === 0 ? '대표 사진' : `사진 ${i + 1}`} decoding="async" />
           </div>
         ))}
       </div>
