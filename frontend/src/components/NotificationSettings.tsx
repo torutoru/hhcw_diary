@@ -18,7 +18,22 @@ export function NotificationSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  if (!status) return null;
+  // 알림 상태를 서버에 묻는 동안: 칸이 나중에 갑자기 나타나 화면이 밀리지 않게 같은 자리에 깜빡이는 뼈대
+  if (!status) {
+    return (
+      <div className="field" aria-busy="true">
+        <span className="field-label">알림</span>
+        <div className="notify-box" aria-hidden="true">
+          <span className="skeleton skeleton-line" />
+          <span className="skeleton skeleton-line is-short" />
+          <span className="skeleton skeleton-button is-wide" />
+        </div>
+        <span className="sr-only" role="status">
+          알림 설정을 불러오는 중
+        </span>
+      </div>
+    );
+  }
 
   async function toggle() {
     setBusy(true);

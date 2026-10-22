@@ -9,6 +9,42 @@ import { Avatar, PersonName } from '../components/Person';
 
 const TOAST_MS = 4000;
 
+/** 구성원 목록을 불러오는 동안: "나" 카드 + 구성원 3줄 자리에 깜빡이는 뼈대 */
+function MembersSkeleton() {
+  return (
+    <div className="members-skeleton" aria-busy="true">
+      <span className="sr-only" role="status">
+        불러오는 중
+      </span>
+      <section className="members-section" aria-hidden="true">
+        <span className="skeleton skeleton-line is-label" />
+        <div className="member-me">
+          <span className="skeleton avatar avatar-lg" />
+          <div className="member-text skeleton-lines">
+            <span className="skeleton skeleton-line is-name" />
+            <span className="skeleton skeleton-line is-short" />
+          </div>
+        </div>
+      </section>
+      <section className="members-section" aria-hidden="true">
+        <span className="skeleton skeleton-line is-label" />
+        <ul className="member-list">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="member-row">
+              <span className="skeleton avatar" />
+              <div className="member-text skeleton-lines">
+                <span className="skeleton skeleton-line is-name" />
+                <span className="skeleton skeleton-line is-short" />
+              </div>
+              <span className="skeleton skeleton-button" />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 export default function MembersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'parent';
@@ -81,7 +117,7 @@ export default function MembersPage() {
         </main>
       ) : (
         <main className="members">
-          {loading && <p className="feed-status">불러오는 중…</p>}
+          {loading && <MembersSkeleton />}
           {error && (
             <p className="form-error" role="alert">
               {error}

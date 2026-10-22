@@ -1636,6 +1636,34 @@ textarea {
 .skeleton.avatar {
   border-radius: 50%;
 }
+/* 구성원 관리 · 내 정보 알림 칸 */
+.skeleton-line.is-label {
+  width: 96px;
+  height: 12px;
+}
+.skeleton-line.is-name {
+  width: 120px;
+  height: 16px;
+}
+.skeleton-lines {
+  gap: 8px;
+}
+.skeleton-button {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 40px;
+  border-radius: 12px;
+}
+.skeleton-button.is-wide {
+  width: 100%;
+  height: 46px;
+  border-radius: var(--radius);
+}
+.members-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
 .detail-skeleton .comment-main {
   gap: 8px;
   padding-top: 4px;
