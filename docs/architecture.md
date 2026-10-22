@@ -6,14 +6,17 @@
               ▼
             Render (Fastify API) ──▶ Turso (사용자·피드·댓글·이미지 메타데이터)
               │                 └──▶ Cloudflare R2 (WebP 이미지 파일)
-              └──▶ Resend (관리자 승인 메일)
+              ├──▶ Resend (관리자 승인 메일)
+              └──▶ Web Push (FCM·Apple 등 브라우저 푸시 서비스 → 가족 휴대폰 알림)
 ```
+
+- 프론트는 PWA입니다(홈 화면 설치, 서비스 워커 `frontend/src/sw.ts`). 자세한 내용은 [pwa.md](pwa.md).
 
 ## 폴더
 
 | 폴더 | 내용 |
 | --- | --- |
-| `frontend/` | React 18 + Vite + TypeScript, react-router |
+| `frontend/` | React 18 + Vite + TypeScript, react-router, vite-plugin-pwa(Workbox) |
 | `backend/` | Node.js + Fastify 5 + TypeScript |
 | `docs/` | 참고 자료와 설계 문서 |
 
