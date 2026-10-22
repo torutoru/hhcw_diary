@@ -24,6 +24,17 @@ export function formatKST(date: Date) {
   return kstDateTime.format(date);
 }
 
+const kstClock = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  hour: 'numeric',
+  minute: 'numeric',
+});
+
+/** 안내 문구용: 오후 3시 12분 */
+export function formatKSTClock(date: Date) {
+  return kstClock.format(date);
+}
+
 export function nowISO() {
   return new Date().toISOString();
 }

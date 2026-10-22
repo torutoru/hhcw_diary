@@ -44,6 +44,12 @@
   - 로그인 화면 "아이디 · 로그인 상태 기억하기"를 켜면 400일(크롬 최대치) 쿠키를 주고, 앱을 열 때마다 400일로 다시 늘립니다. 끄면 브라우저를 닫을 때 지워지는 세션 쿠키(JWT 최대 1일)입니다.
   - 브라우저 localStorage에는 **아이디(이메일)만** 저장합니다. 비밀번호는 저장하지 않습니다(평문 저장 시 PC를 쓰는 누구나 볼 수 있어서). 비밀번호 저장은 브라우저의 비밀번호 관리자에 맡깁니다.
 - 매 요청 DB에서 사용자 상태·권한을 다시 읽으므로, 권한 변경이 바로 반영됩니다.
+- **로그인 잠금**: 비밀번호를 **5번 연속** 틀리면 그 시점부터 **1시간** 로그인할 수 없습니다(`users.failed_logins`, `users.locked_until`).
+  - 잠긴 동안은 비밀번호가 맞아도 423과 풀리는 시각을 돌려줍니다.
+  - 로그인에 성공하면 틀린 횟수를 0으로 되돌립니다. 1시간이 지난 뒤 첫 시도에서도 0으로 되돌린 다음 처리합니다.
+  - 가입되지 않은 이메일은 횟수를 세지 않습니다. 횟수는 계정 기준이라 여러 기기의 실패가 합쳐집니다.
+  - 실패 처리는 `UPDATE … RETURNING` 한 문장이라 동시에 여러 번 틀려도 숫자가 꼬이지 않습니다.
+  - 관리자가 바로 풀어 주려면 Turso 콘솔에서 `UPDATE users SET failed_logins = 0, locked_until = NULL WHERE email = '<이메일>';`
 - 사용자 정보는 **가족관계**와 **호칭** 두 가지로 나뉩니다.
   - **가족관계**(`relation`): 권한 기준. 가입 때 입력하고 바꿀 수 없습니다 ([backend/src/lib/family.ts](../backend/src/lib/family.ts)).
     - '엄마', '아빠' → `parent` (피드 작성·수정, 구성원 관리 + 댓글)
@@ -73,7 +79,7 @@
 
 | 테이블 | 주요 컬럼 |
 | --- | --- |
-| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각) |
+| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각), `failed_logins`·`locked_until`(로그인 잠금) |
 | `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
 | `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |

@@ -11,7 +11,7 @@
 | --- | --- | --- |
 | POST | `/auth/signup` | 가입 요청. `{ email, password(4자+), relation(가족관계), nickname(호칭) }` → 201. 관리자에게 승인 메일 발송. 가족관계가 '엄마'/'아빠'면 `parent`, 그 외 `member`. 승인 대기 중인 이메일로 다시 요청하면 정보 갱신 후 새 링크 발송. 이미 가입된 이메일, 이미 등록된 '엄마'/'아빠' 가족관계는 409 |
 | GET | `/signup/confirm/:token` | 승인 메일 링크. 처리 후 `{APP_URL}/signup/confirm?status=success\|expired\|used\|invalid\|taken&email=…&relation=…` 로 302 이동 |
-| POST | `/auth/login` | `{ email, password, remember? }` → `{ user }` + 쿠키. 틀리면 401, 승인 전·제거된 계정이면 403. `remember: true` 면 400일 쿠키, 아니면 브라우저를 닫으면 사라지는 세션 쿠키(최대 1일) |
+| POST | `/auth/login` | `{ email, password, remember? }` → `{ user }` + 쿠키. 틀리면 401(남은 횟수 안내), 승인 전·제거된 계정이면 403, **잠긴 계정이면 423**(풀리는 시각 안내). `remember: true` 면 400일 쿠키, 아니면 브라우저를 닫으면 사라지는 세션 쿠키(최대 1일) |
 | POST | `/auth/logout` | 쿠키 삭제 |
 | GET | `/auth/me` 🔒 | `{ user: User }`. `remember` 로 로그인한 세션이면 쿠키 만료를 다시 400일로 늘림 |
 | PATCH | `/auth/me` 🔒 | 내 정보 수정. `{ nickname }` (1~20자) → `{ user }`. 이메일·가족관계는 바꿀 수 없음 (보내도 무시) |

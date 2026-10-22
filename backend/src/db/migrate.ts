@@ -119,6 +119,9 @@ async function splitRelationAndNickname() {
 async function addMissingColumns() {
   await splitRelationAndNickname();
   await addColumnIfMissing('users', 'removed_at', 'TEXT');
+  // 로그인 잠금: 비밀번호 연속 실패 횟수와 잠금 해제 시각 (5번 실패 → 1시간 잠금)
+  await addColumnIfMissing('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfMissing('users', 'locked_until', 'TEXT');
   await addColumnIfMissing('comments', 'deleted_at', 'TEXT');
   // 리스트용 작은 사진(1080px)의 저장소 키. 기능 추가 전 사진은 비어 있고, 화면에서는 원본을 대신 쓴다
   await addColumnIfMissing('images', 'thumb_key', 'TEXT');

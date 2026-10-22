@@ -7,7 +7,7 @@ import { db } from '../db/client.js';
 import { conflict, forbidden, HttpError, unauthorized } from '../lib/errors.js';
 import { roleForRelation } from '../lib/family.js';
 import { sendMail } from '../lib/mailer.js';
-import { formatKST, nowISO } from '../lib/time.js';
+import { formatKST, formatKSTClock, nowISO } from '../lib/time.js';
 import { clearSession, requireUser, setSession, toSessionUser } from '../plugins/auth.js';
 import { approvalEmail } from '../templates/approvalEmail.js';
 
@@ -29,6 +29,16 @@ const loginBody = z.object({
   password: z.string(),
   remember: z.boolean().default(false),
 });
+
+// 로그인 잠금: 비밀번호를 5번 연속 틀리면 그때부터 1시간 동안 로그인 불가
+const MAX_FAILED_LOGINS = 5;
+const LOCK_MS = 60 * 60 * 1000;
+
+const lockedError = (until: Date) =>
+  new HttpError(
+    423,
+    `비밀번호를 ${MAX_FAILED_LOGINS}번 틀려서 계정이 잠겼어요. ${formatKSTClock(until)} 이후에 다시 시도해 주세요.`,
+  );
 
 async function isParentRelationTaken(relation: string, exceptUserId: string) {
   const rs = await db.execute({
@@ -158,17 +168,54 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password, remember } = loginBody.parse(req.body);
     const rs = await db.execute({
-      sql: 'SELECT id, email, nickname, relation, role, status, removed_at, password_hash FROM users WHERE email = ?',
+      sql: `SELECT id, email, nickname, relation, role, status, removed_at, password_hash, locked_until
+            FROM users WHERE email = ?`,
       args: [email],
     });
     const row = rs.rows[0];
-    if (!row || !(await bcrypt.compare(password, String(row.password_hash)))) {
-      throw unauthorized('이메일 또는 비밀번호가 맞지 않아요.');
+    // 없는 이메일은 횟수를 세지 않는다
+    if (!row) throw unauthorized('이메일 또는 비밀번호가 맞지 않아요.');
+
+    const userId = String(row.id);
+    const now = new Date();
+
+    // 잠긴 동안은 비밀번호가 맞아도 막는다. 잠금 시간이 지났으면 횟수를 0으로 되돌리고 계속
+    if (row.locked_until) {
+      const until = new Date(String(row.locked_until));
+      if (until > now) throw lockedError(until);
+      await db.execute({
+        sql: 'UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?',
+        args: [userId],
+      });
     }
+
+    if (!(await bcrypt.compare(password, String(row.password_hash)))) {
+      // 실패 횟수 +1, 5번째면 지금부터 1시간 잠금 (동시 요청에도 숫자가 꼬이지 않게 한 문장으로)
+      const lockUntil = new Date(now.getTime() + LOCK_MS).toISOString();
+      const updated = await db.execute({
+        sql: `UPDATE users SET
+                failed_logins = failed_logins + 1,
+                locked_until = CASE WHEN failed_logins + 1 >= ? THEN ? ELSE locked_until END
+              WHERE id = ?
+              RETURNING failed_logins, locked_until`,
+        args: [MAX_FAILED_LOGINS, lockUntil, userId],
+      });
+      const after = updated.rows[0];
+      if (after?.locked_until) {
+        req.log.warn(`로그인 잠금: ${userId} (${MAX_FAILED_LOGINS}회 실패)`);
+        throw lockedError(new Date(String(after.locked_until)));
+      }
+      const left = MAX_FAILED_LOGINS - Number(after?.failed_logins ?? 0);
+      throw unauthorized(`이메일 또는 비밀번호가 맞지 않아요. ${left}번 더 틀리면 1시간 동안 로그인할 수 없어요.`);
+    }
+
+    // 비밀번호가 맞으면 틀린 횟수 초기화
+    await db.execute({ sql: 'UPDATE users SET failed_logins = 0 WHERE id = ? AND failed_logins <> 0', args: [userId] });
+
     if (row.removed_at) throw forbidden('가족에서 제거된 계정이에요. 다시 함께하려면 가입을 요청해 주세요.');
     if (row.status !== 'active') throw forbidden('아직 관리자 승인 전이에요. 승인 후 로그인할 수 있어요.');
 
-    setSession(reply, String(row.id), config.isProd, remember);
+    setSession(reply, userId, config.isProd, remember);
     return { user: toSessionUser(row) };
   });
 
