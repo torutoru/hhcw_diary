@@ -1715,6 +1715,19 @@ button.fab {
 .thumb img {
   border-radius: 12px;
 }
+/* 길게 누르면 대표 사진 메뉴: 휴대폰 기본 메뉴(이미지 저장)·글자 선택이 뜨지 않게 */
+.thumb {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.thumb img {
+  pointer-events: none;
+}
+.thumb.is-pressed {
+  outline: 2.5px solid var(--primary);
+  outline-offset: 2px;
+}
 .thumb-remove {
   position: absolute;
   top: -6px;

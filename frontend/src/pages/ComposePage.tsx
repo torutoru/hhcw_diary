@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { CloseIcon, PhotoIcon, PlusIcon } from '../components/Icons';
+import PopoverMenu from '../components/PopoverMenu';
 import { formatComposeDate } from '../lib/format';
 import { preShrink } from '../lib/imageResize';
+import { useLongPress } from '../lib/useLongPress';
 
 const MAX_EXTRA = 5;
 
@@ -40,6 +42,10 @@ export default function ComposePage() {
   const objectUrls = useRef<string[]>([]);
   // 업로드가 끝나기 전에 뺀 사진. 업로드가 끝나는 즉시 지운다
   const discarded = useRef(new Set<string>());
+  // 추가 사진을 길게 누르면 사진 위에 뜨는 메뉴 → "대표 사진으로 적용하기"
+  const longPress = useLongPress();
+  const [menuFor, setMenuFor] = useState<{ slot: Slot; anchor: HTMLElement } | null>(null);
+  const closeMenu = useCallback(() => setMenuFor(null), []);
 
   useEffect(() => {
     api
@@ -77,7 +83,7 @@ export default function ComposePage() {
   }
 
   // 업로드 결과를 key 로 찾아 반영. 그 사이 사진을 뺐으면 올라간 사진을 바로 지운다
-  async function upload(slot: Slot, file: File, isCover: boolean) {
+  async function upload(slot: Slot, file: File) {
     let patch: Partial<Slot>;
     try {
       const blob = await preShrink(file);
@@ -91,8 +97,18 @@ export default function ComposePage() {
     } catch (err) {
       patch = { status: 'error', error: (err as Error).message };
     }
-    if (isCover) setCover((c) => (c?.key === slot.key ? { ...c, ...patch } : c));
-    else setExtras((list) => list.map((s) => (s.key === slot.key ? { ...s, ...patch } : s)));
+    // 올리는 사이 대표 사진과 자리를 바꿨을 수 있어 양쪽에서 key 로 찾는다
+    setCover((c) => (c?.key === slot.key ? { ...c, ...patch } : c));
+    setExtras((list) => list.map((s) => (s.key === slot.key ? { ...s, ...patch } : s)));
+  }
+
+  /** 추가 사진을 대표 사진으로: 두 사진의 자리를 맞바꾼다 (원래 대표 사진은 그 추가 사진 자리로) */
+  function makeCover(slot: Slot) {
+    setExtras((list) => {
+      if (!cover) return list.filter((s) => s.key !== slot.key);
+      return list.map((s) => (s.key === slot.key ? cover : s));
+    });
+    setCover(slot);
   }
 
   function onPickCover(e: ChangeEvent<HTMLInputElement>) {
@@ -102,7 +118,7 @@ export default function ComposePage() {
     if (cover) discard(cover);
     const slot = makeSlot(file);
     setCover(slot);
-    upload(slot, file, true);
+    upload(slot, file);
   }
 
   function onPickExtras(e: ChangeEvent<HTMLInputElement>) {
@@ -110,7 +126,7 @@ export default function ComposePage() {
     e.target.value = '';
     const slots = files.map(makeSlot);
     setExtras((list) => [...list, ...slots]);
-    slots.forEach((slot, i) => upload(slot, files[i], false));
+    slots.forEach((slot, i) => upload(slot, files[i]));
   }
 
   const all = [cover, ...extras].filter((s): s is Slot => s !== null);
@@ -210,7 +226,11 @@ export default function ComposePage() {
           </div>
           <div className="thumbs">
             {extras.map((s, i) => (
-              <div key={s.key} className="thumb">
+              <div
+                key={s.key}
+                className={`thumb${menuFor?.slot.key === s.key ? ' is-pressed' : ''}`}
+                {...longPress((anchor) => setMenuFor({ slot: s, anchor }))}
+              >
                 <img src={s.preview} alt={`추가 사진 ${i + 1}`} decoding="async" />
                 <SlotState slot={s} />
                 <button
@@ -239,7 +259,26 @@ export default function ComposePage() {
             ))}
           </div>
           <input ref={extraInput} type="file" accept="image/*" multiple hidden onChange={onPickExtras} />
+          {extras.length > 0 && <span className="hint">사진을 길게 누르면 대표 사진으로 바꿀 수 있어요.</span>}
         </div>
+
+        {menuFor && (
+          <PopoverMenu
+            anchor={menuFor.anchor}
+            label="사진 메뉴"
+            onClose={closeMenu}
+            items={[
+              {
+                label: '대표 사진으로 적용하기',
+                icon: <PhotoIcon size={18} strokeWidth={2} />,
+                onSelect: () => {
+                  makeCover(menuFor.slot);
+                  setMenuFor(null);
+                },
+              },
+            ]}
+          />
+        )}
 
         <div className="compose-section">
           <label htmlFor="compose-text" className="compose-label">

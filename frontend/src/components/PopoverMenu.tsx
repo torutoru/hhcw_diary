@@ -31,9 +31,11 @@ export default function PopoverMenu({ anchor, items, onClose, label }: Props) {
   useLayoutEffect(() => {
     const a = anchor.getBoundingClientRect();
     const height = menu.current?.offsetHeight ?? 0;
+    const width = menu.current?.offsetWidth ?? 0;
     const above = a.top - GAP - height;
     const top = above >= EDGE ? above : a.bottom + GAP;
-    const right = Math.max(EDGE, window.innerWidth - a.right);
+    // 왼쪽에 있는 버튼(작성 화면의 첫 사진 등)이면 메뉴가 화면 왼쪽 밖으로 나가지 않게 당긴다
+    const right = Math.max(EDGE, Math.min(window.innerWidth - a.right, window.innerWidth - width - EDGE));
     setPos({ top, right });
     menu.current?.querySelector('button')?.focus();
   }, [anchor]);
