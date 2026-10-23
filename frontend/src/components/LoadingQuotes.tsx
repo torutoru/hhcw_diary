@@ -14,11 +14,12 @@ const current = { index: Math.floor(Math.random() * FAMILY_QUOTES.length), start
 
 /**
  * 첫 로딩·서버 깨우는 중 화면: 가족 문구를 은은하게 바꿔 가며 보여준다.
- * 앱을 열 때 로그인 확인(AuthProvider)과 메인 피드 첫 불러오기에서 쓴다.
+ * 앱을 열 때 로그인 확인(AuthProvider)과 메인 피드 첫 불러오기, 당겨서 새로고침(어두운 덮개 위)에서 쓴다.
+ * immediate: 기다리지 않고 바로 보여준다 (새로고침 덮개는 뜨는 순간 진행 표시가 보여야 해서)
  */
-export default function LoadingQuotes() {
+export default function LoadingQuotes({ immediate = false }: { immediate?: boolean }) {
   const [continuing] = useState(() => Date.now() - current.lastSeenAt < CONTINUE_WITHIN_MS);
-  const [visible, setVisible] = useState(continuing);
+  const [visible, setVisible] = useState(continuing || immediate);
   const [index, setIndex] = useState(() =>
     continuing ? current.index : Math.floor(Math.random() * FAMILY_QUOTES.length),
   );

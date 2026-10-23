@@ -140,11 +140,10 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* 놓은 뒤 새로고침 중: 화면 전체를 투명한 옅은 회색이 덮고 가운데 진행 표시만 돈다. 끝나면 사라짐 */}
+      {/* 놓은 뒤 새로고침 중: 화면 전체를 짙은 회색이 덮고, 첫 로딩과 같은 가족 문구 + 작은 진행 표시. 끝나면 사라짐 */}
       {refreshing && (
-        <div className="refresh-overlay" role="status" aria-live="polite">
-          <span className="refresh-spinner" aria-hidden="true" />
-          <span className="sr-only">새로고침 중</span>
+        <div className="refresh-overlay">
+          <LoadingQuotes immediate />
         </div>
       )}
 

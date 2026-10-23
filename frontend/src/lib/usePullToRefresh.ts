@@ -6,8 +6,8 @@ export const PULL_THRESHOLD = 72;
 const PULL_MAX = 120;
 /** 손가락 이동 대비 화면 이동 비율 (고무줄 같은 저항감) */
 const RESISTANCE = 0.5;
-/** 새로고침이 너무 빨리 끝나도 돌아가는 아이콘을 잠깐은 보여준다 */
-const MIN_SPIN_MS = 500;
+/** 새로고침이 너무 빨리 끝나도 덮개를 잠깐은 보여준다 (가족 문구를 읽을 수 있게 2초, 사용자 요청) */
+const MIN_SPIN_MS = 2000;
 
 /**
  * 당겨서 새로고침: 페이지 맨 위에서 아래로 당겼다 놓으면 onRefresh 를 부른다.
