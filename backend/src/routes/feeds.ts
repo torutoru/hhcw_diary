@@ -13,7 +13,8 @@ import { nowISO, todayKST } from '../lib/time.js';
 import { requireParent, requireUser } from '../plugins/auth.js';
 
 const MAX_PHOTOS = 6; // 대표 사진 1 + 추가 5
-const PREVIEW_COMMENTS = 2;
+// 목록 카드에는 가장 최근 댓글 1개만
+const PREVIEW_COMMENTS = 1;
 
 // 실제로 있는 날짜이면서 오늘(KST) 이전인지. 미래 날짜의 피드는 만들 수 없다
 const feedDate = z
@@ -43,8 +44,9 @@ const listQuery = z.object({
 });
 
 const commentsQuery = z.object({
-  offset: z.coerce.number().int().min(0).default(0),
-  limit: z.coerce.number().int().min(1).max(50).default(5),
+  /** 이 댓글보다 이전 댓글을 가져온다 (없으면 최신 댓글부터) */
+  before: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(3),
 });
 
 const commentBody = z.object({
@@ -319,26 +321,34 @@ export async function feedRoutes(app: FastifyInstance) {
     return { feed: await feedDetail(req.params.id) };
   });
 
-  // 댓글: 최신순, 5개씩 더보기(더 오래된 댓글). 삭제된 댓글도 자리를 지키며 deleted: true 로 내려간다
+  // 댓글: 시간순(오래된 것 → 최신). 처음엔 최신 limit 개, before=<댓글 id> 면 그보다 이전 limit 개.
+  // 보는 사이 새 댓글이 달려도 기준 댓글로 자르므로 겹치거나 빠지지 않는다.
+  // 삭제된 댓글도 자리를 지키며 deleted: true 로 내려간다
   app.get<{ Params: { id: string } }>('/api/feeds/:id/comments', { preHandler: requireUser }, async (req) => {
-    const { offset, limit } = commentsQuery.parse(req.query);
+    const { before, limit } = commentsQuery.parse(req.query);
     const [list, count] = await db.batch(
       [
         {
+          // 최신부터 limit+1 개를 받아 더 이전 댓글이 있는지(hasMore) 알아낸다
           sql: `SELECT c.id, c.body, c.created_at, c.deleted_at, c.edited_at, c.author_id,
                   u.nickname AS author, u.relation AS author_relation
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id = ?
+                  ${before ? 'AND (c.created_at, c.id) < (SELECT created_at, id FROM comments WHERE id = ? AND feed_id = ?)' : ''}
                 ORDER BY c.created_at DESC, c.id DESC
-                LIMIT ? OFFSET ?`,
-          args: [req.params.id, limit, offset],
+                LIMIT ?`,
+          args: before
+            ? [req.params.id, before, req.params.id, limit + 1]
+            : [req.params.id, limit + 1],
         },
         { sql: 'SELECT COUNT(*) AS n FROM comments WHERE feed_id = ?', args: [req.params.id] },
       ],
       'read',
     );
+    const rows = list.rows.slice(0, limit).reverse();
     return {
-      items: list.rows.map((r) => ({
+      hasMore: list.rows.length > limit,
+      items: rows.map((r) => ({
         id: String(r.id),
         author: String(r.author),
         authorRelation: String(r.author_relation),

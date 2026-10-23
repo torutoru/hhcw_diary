@@ -78,8 +78,8 @@ export default function FeedPage() {
           ? {
               ...f,
               commentCount: f.commentCount + 1,
-              // 미리보기는 최신 댓글 2개
-              comments: [comment, ...f.comments].slice(0, 2),
+              // 미리보기는 가장 최근 댓글 1개
+              comments: [comment],
             }
           : f,
       ),

@@ -55,8 +55,11 @@ export const api = {
   updateFeed: (id: string, body: string, imageIds: string[]) =>
     request<{ feed: FeedDetail }>(`/feeds/${id}`, { method: 'PUT', body: json({ body, imageIds }) }),
 
-  comments: (feedId: string, offset: number, limit = 5) =>
-    request<{ items: Comment[]; total: number }>(`/feeds/${feedId}/comments?offset=${offset}&limit=${limit}`),
+  /** 시간순 댓글. before 가 없으면 최신 limit 개, 있으면 그 댓글보다 이전 limit 개. hasMore = 더 이전 댓글이 있음 */
+  comments: (feedId: string, limit: number, before?: string) =>
+    request<{ items: Comment[]; total: number; hasMore: boolean }>(
+      `/feeds/${feedId}/comments?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`,
+    ),
   addComment: (feedId: string, body: string) =>
     request<{ comment: Comment }>(`/feeds/${feedId}/comments`, { method: 'POST', body: json({ body }) }),
   editComment: (feedId: string, commentId: string, body: string) =>

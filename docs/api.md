@@ -43,7 +43,7 @@ FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, upd
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| GET | `/feeds/:id/comments?offset=0&limit=5` 🔒 | 최신순(더보기는 더 오래된 댓글). `{ items: Comment[], total }`. 삭제된 댓글도 자리를 지키며 포함됨 |
+| GET | `/feeds/:id/comments?limit=3&before=<댓글 id>` 🔒 | 시간순(오래된 것 → 최신). `before` 없으면 최신 `limit`개(기본 3), 있으면 그 댓글보다 이전 `limit`개(최대 50). `{ items: Comment[], total, hasMore }` (`hasMore` = 더 이전 댓글 있음). 삭제된 댓글도 자리를 지키며 포함됨 |
 | POST | `/feeds/:id/comments` 🔒 | `{ body }` (1~500자) → `{ comment }` |
 | PATCH | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 수정 `{ body }`(1~500자) → `{ ok, body }`. `edited` 가 true 가 됨. 남의 댓글은 403, 삭제됐거나 없으면 404. 알림 없음 |
 | DELETE | `/feeds/:id/comments/:commentId` 🔒 | **본인 댓글만** 삭제 → `{ ok }`. 남의 댓글은 403, 이미 삭제됐거나 없으면 404 |

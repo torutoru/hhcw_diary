@@ -37,7 +37,9 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
         <div className="feed-cover" />
       )}
 
+      {/* 가장 최근 댓글 1개. 이전 댓글이 더 있으면 그 위에 "댓글 N개 더보기" */}
       <div className="feed-card-comments">
+        {more > 0 && <span className="muted">댓글 {more}개 더보기</span>}
         {item.comments.map((c) =>
           c.deleted ? (
             <div key={c.id} className="comment-line is-deleted">
@@ -50,7 +52,6 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
             </div>
           ),
         )}
-        {more > 0 && <span className="muted">댓글 {more}개 더보기</span>}
         {item.commentCount === 0 && <span className="muted">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</span>}
       </div>
     </Link>

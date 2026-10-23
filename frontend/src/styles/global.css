@@ -1018,6 +1018,56 @@ button.fab {
   color: var(--text-muted);
   font-size: calc(14px * var(--font-scale));
 }
+/* 펼친 댓글 영역: 피드 내용은 위 한 줄 요약으로 줄고, 아래는 댓글만 따로 스크롤 */
+.comments-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.comments-panel-feed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--divider);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.comments-panel-feed img {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.comments-panel-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: calc(14px * var(--font-scale));
+  color: var(--text-muted);
+}
+.comments-panel-back {
+  flex: 0 0 auto;
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 700;
+  color: var(--primary);
+}
+.comments-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 0 20px;
+}
 /* 상세 모달 위에 확인 시트가 뜬다 */
 .modal-root .sheet-root {
   z-index: 55;
