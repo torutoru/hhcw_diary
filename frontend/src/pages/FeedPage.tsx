@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useMatch } from 'react-router-dom';
 import { api } from '../api/client';
 import type { CommentPreview, FeedListItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import FabMenu from '../components/FabMenu';
 import FeedCard from '../components/FeedCard';
-import { HomeIcon } from '../components/Icons';
+import { HomeIcon, RefreshIcon } from '../components/Icons';
 import LoadingQuotes from '../components/LoadingQuotes';
 import { NotificationCard } from '../components/NotificationSettings';
 import { APP_NAME } from '../lib/app';
+import { PULL_THRESHOLD, usePullToRefresh } from '../lib/usePullToRefresh';
 import ProfileMenu from '../components/ProfileMenu';
 
 export interface FeedOutletContext {
   onCommentAdded: (feedId: string, comment: CommentPreview) => void;
   onCommentDeleted: (feedId: string, commentId: string) => void;
   onCommentEdited: (feedId: string, commentId: string, body: string) => void;
+  /** 상세를 열어 읽음 처리됨 → 카드의 "N" 지우기 */
+  onFeedRead: (feedId: string) => void;
   /** 상세를 닫으면 돌아갈 화면: 메인 피드 '/' 또는 검색 달력 '/search' */
   closeTo: string;
 }
@@ -48,6 +51,11 @@ export default function FeedPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 당겨서 새로고침: 맨 위에서 아래로 당겼다 놓으면 최신 피드부터 다시 불러온다 (상세가 떠 있을 때는 쉼)
+  const detailOpen = useMatch('/feeds/:id') !== null;
+  const refresh = useCallback(() => load(), [load]);
+  const { pull, dragging, refreshing } = usePullToRefresh(refresh, !detailOpen);
 
   // 목록 끝에 닿기 전(아래로 화면 한두 장 남았을 때) 다음 10개를 미리 불러온다
   useEffect(() => {
@@ -97,6 +105,10 @@ export default function FeedPage() {
     );
   }, []);
 
+  const onFeedRead = useCallback<FeedOutletContext['onFeedRead']>((feedId) => {
+    setItems((prev) => prev.map((f) => (f.id === feedId ? { ...f, isNew: false, newComments: 0 } : f)));
+  }, []);
+
   const isParent = user?.role === 'parent';
 
   return (
@@ -111,7 +123,29 @@ export default function FeedPage() {
         <ProfileMenu />
       </header>
 
-      <main className="feed-main has-fab">
+      {/* 당겨서 새로고침 아이콘: 당긴 만큼 내려오며 돌고, 충분히 당기면 초록색, 새로고침 중엔 계속 돈다 */}
+      <div
+        className={`ptr-indicator${pull >= PULL_THRESHOLD || refreshing ? ' is-ready' : ''}${
+          refreshing ? ' is-refreshing' : ''
+        }${dragging ? ' is-dragging' : ''}`}
+        style={{
+          opacity: Math.min(1, pull / (PULL_THRESHOLD * 0.6)),
+          transform: `translate(-50%, ${pull - 44}px)`,
+        }}
+        aria-hidden={pull === 0}
+      >
+        <span className="ptr-icon" style={refreshing ? undefined : { transform: `rotate(${pull * 3}deg)` }}>
+          <RefreshIcon size={20} />
+        </span>
+        <span className="sr-only" role="status">
+          {refreshing ? '새로고침 중' : pull >= PULL_THRESHOLD ? '놓으면 새로고침' : ''}
+        </span>
+      </div>
+
+      <main
+        className={`feed-main has-fab${dragging ? ' is-pulling' : ''}`}
+        style={pull ? { transform: `translateY(${pull}px)` } : undefined}
+      >
         <NotificationCard />
 
         {items.map((item) => (
@@ -157,7 +191,9 @@ export default function FeedPage() {
       <FabMenu isParent={isParent} />
 
       <Outlet
-        context={{ onCommentAdded, onCommentDeleted, onCommentEdited, closeTo: '/' } satisfies FeedOutletContext}
+        context={
+          { onCommentAdded, onCommentDeleted, onCommentEdited, onFeedRead, closeTo: '/' } satisfies FeedOutletContext
+        }
       />
     </>
   );

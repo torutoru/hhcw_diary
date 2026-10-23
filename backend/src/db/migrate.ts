@@ -67,6 +67,14 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
 
+-- 사람별·피드별 마지막으로 본 시각 (새 피드·새 댓글 "N" 표시)
+CREATE TABLE IF NOT EXISTS feed_reads (
+  user_id      TEXT NOT NULL REFERENCES users(id),
+  feed_id      TEXT NOT NULL REFERENCES feeds(id),
+  last_read_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, feed_id)
+);
+
 CREATE TABLE IF NOT EXISTS comments (
   id         TEXT PRIMARY KEY,
   feed_id    TEXT NOT NULL REFERENCES feeds(id),
@@ -119,6 +127,12 @@ async function splitRelationAndNickname() {
 async function addMissingColumns() {
   await splitRelationAndNickname();
   await addColumnIfMissing('users', 'removed_at', 'TEXT');
+  // "N" 표시 기준 시각: 이보다 오래된 피드·댓글은 본 것으로 친다.
+  // 처음 추가될 때 기존 사용자는 지금으로 채워, 배포 순간 모든 피드에 N 이 붙지 않게 한다 (새 사용자는 승인 시각)
+  if (!(await columnsOf('users')).has('read_baseline_at')) {
+    await db.execute('ALTER TABLE users ADD COLUMN read_baseline_at TEXT');
+    await db.execute({ sql: 'UPDATE users SET read_baseline_at = ?', args: [new Date().toISOString()] });
+  }
   // 로그인 잠금: 비밀번호 연속 실패 횟수와 잠금 해제 시각 (5번 실패 → 1시간 잠금)
   await addColumnIfMissing('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
   await addColumnIfMissing('users', 'locked_until', 'TEXT');

@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import ConfirmSheet from './ConfirmSheet';
 import Lightbox from './Lightbox';
+import NewBadge from './NewBadge';
 import { Avatar, PersonName } from './Person';
 import PopoverMenu from './PopoverMenu';
 import { formatDateTime, formatFullDate, formatWrittenLine } from '../lib/format';
@@ -54,7 +55,10 @@ function DetailSkeleton() {
 export default function FeedDetailModal() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { onCommentAdded, onCommentDeleted, onCommentEdited, closeTo } = useOutletContext<FeedOutletContext>();
+  const { onCommentAdded, onCommentDeleted, onCommentEdited, onFeedRead, closeTo } =
+    useOutletContext<FeedOutletContext>();
+  // 이 피드를 이전에 본 시각. 그 뒤 달린 남의 댓글에 "N" (열어 둔 동안은 유지, 다음에 열면 사라짐)
+  const [previousReadAt, setPreviousReadAt] = useState<string | null>(null);
   const location = useLocation();
   const canEdit = useAuth().user?.role === 'parent';
   // 내 댓글 ⋯ 메뉴(버튼 위에 뜸) → 수정(아래 입력칸에서) / 제거(확인 시트)
@@ -79,8 +83,25 @@ export default function FeedDetailModal() {
 
   // 댓글 알림으로 열면(주소 끝 #comments) 댓글을 끝까지 불러와 최신 댓글 위치로 스크롤한다
   const focusComments = location.hash === '#comments';
-  const commentsEnd = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const scrollToComments = useRef(false);
+
+  // 열면 읽음 처리 → 메인 피드 카드의 "N"도 지운다
+  useEffect(() => {
+    let alive = true;
+    setPreviousReadAt(null);
+    api
+      .markRead(id)
+      .then((res) => {
+        if (!alive) return;
+        setPreviousReadAt(res.previousReadAt);
+        onFeedRead(id);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [id, onFeedRead]);
 
   useEffect(() => {
     let alive = true;
@@ -100,10 +121,22 @@ export default function FeedDetailModal() {
     };
   }, [id, focusComments]);
 
+  // 스크롤 영역(.modal-body)의 위치를 직접 맨 아래로 지정한다.
+  // scrollIntoView 는 떠 있는 창 안의 스크롤 영역에서 아이폰 등이 무시하거나 중간에 멈출 수 있어서 쓰지 않는다.
+  // 그린 직후 한 번, 사진·글꼴이 늦게 들어와 높이가 바뀔 때를 대비해 조금 뒤에 두 번 더 맞춘다
   useEffect(() => {
     if (!feed || !scrollToComments.current) return;
     scrollToComments.current = false;
-    commentsEnd.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    const toBottom = () => {
+      const body = bodyRef.current;
+      if (body) body.scrollTop = body.scrollHeight;
+    };
+    const frame = requestAnimationFrame(toBottom);
+    const timers = [300, 900].map((ms) => window.setTimeout(toBottom, ms));
+    return () => {
+      cancelAnimationFrame(frame);
+      timers.forEach((t) => window.clearTimeout(t));
+    };
   }, [feed, comments]);
 
   // 열려 있는 동안 배경 스크롤을 막고, Esc 로 닫는다
@@ -238,7 +271,7 @@ export default function FeedDetailModal() {
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="modal-body" ref={bodyRef}>
           {error && <p className="feed-status" role="alert">{error}</p>}
           {!feed && !error && <DetailSkeleton />}
           {feed && (
@@ -298,6 +331,9 @@ export default function FeedDetailModal() {
                             {formatDateTime(c.createdAt, feed.date)}
                             {c.edited && ' · 수정됨'}
                           </span>
+                          {!c.mine && previousReadAt !== null && c.createdAt > previousReadAt && (
+                            <NewBadge label="새 댓글" />
+                          )}
                         </div>
                         <span className="comment-text">{c.body}</span>
                       </div>
@@ -324,7 +360,6 @@ export default function FeedDetailModal() {
                     댓글 더보기 ({Math.min(PAGE, left)}개 / 남은 {left}개)
                   </button>
                 )}
-                <div ref={commentsEnd} aria-hidden="true" />
               </div>
             </>
           )}

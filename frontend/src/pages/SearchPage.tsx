@@ -60,6 +60,7 @@ export default function SearchPage() {
             onCommentAdded: noop,
             onCommentDeleted: noop,
             onCommentEdited: noop,
+            onFeedRead: noop,
             closeTo: '/search',
           } satisfies FeedOutletContext
         }

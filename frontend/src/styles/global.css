@@ -244,6 +244,21 @@ textarea {
   padding: 0;
 }
 
+/* 안 본 피드·댓글 "N" (흰 글자 대비 4.5:1 이상인 빨강) */
+.new-badge {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #c8382a;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  align-self: center;
+}
 .badge-today {
   font-size: 12px;
   font-weight: 700;
@@ -490,6 +505,50 @@ textarea {
 /* 플로팅 버튼에 마지막 카드가 가리지 않게 */
 .feed-main.has-fab {
   padding-bottom: 112px;
+}
+/* 당겨서 새로고침: 손을 떼면 목록이 부드럽게 제자리로 (당기는 중에는 손가락을 바로 따라옴) */
+.feed-main {
+  transition: transform 0.25s ease;
+}
+.feed-main.is-pulling {
+  transition: none;
+}
+.ptr-indicator {
+  position: fixed;
+  top: calc(60px + env(safe-area-inset-top) + 12px);
+  left: 50%;
+  z-index: 9;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  box-shadow: 0 4px 14px rgba(29, 38, 32, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease,
+    color 0.15s ease;
+}
+.ptr-indicator.is-dragging {
+  transition: color 0.15s ease;
+}
+.ptr-indicator.is-ready {
+  color: var(--primary);
+}
+.ptr-icon {
+  display: flex;
+}
+.ptr-indicator.is-refreshing .ptr-icon {
+  animation: spin 0.8s linear infinite;
+}
+/* 피드 화면에서 브라우저 기본 "당겨서 페이지 새로고침"과 겹치지 않게 */
+html:has(.feed-main),
+html:has(.feed-main) body {
+  overscroll-behavior-y: contain;
 }
 
 /* 피드 작성하기 플로팅 버튼 (디자인: 62px 원, 오른쪽 20px · 아래 28px).

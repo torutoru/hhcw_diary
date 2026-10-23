@@ -3,6 +3,7 @@ import type { FeedListItem } from '../api/types';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
 import { formatFeedDate } from '../lib/format';
 import { PhotoIcon } from './Icons';
+import NewBadge from './NewBadge';
 import { PersonName } from './Person';
 
 export default function FeedCard({ item }: { item: FeedListItem }) {
@@ -13,6 +14,10 @@ export default function FeedCard({ item }: { item: FeedListItem }) {
         <div className="feed-card-date display">
           {formatFeedDate(item.date)}
           {item.isToday && <span className="badge-today">오늘</span>}
+          {/* 안 본 새 피드이거나, 마지막으로 본 뒤 새 댓글이 달렸으면 N */}
+          {(item.isNew || item.newComments > 0) && (
+            <NewBadge label={item.isNew ? '새 피드' : `새 댓글 ${item.newComments}개`} />
+          )}
         </div>
         <span className="photo-count">
           <PhotoIcon />

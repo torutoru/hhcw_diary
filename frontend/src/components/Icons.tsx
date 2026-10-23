@@ -31,6 +31,14 @@ export const HomeHeartIcon = ({ size = 36, strokeWidth = 1.8 }: P) => (
   </svg>
 );
 
+/** 새로고침 (둥근 화살표) */
+export const RefreshIcon = ({ size = 20, strokeWidth = 2.2 }: P) => (
+  <svg {...base(size, strokeWidth)}>
+    <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+    <path d="M20 4v5h-5" />
+  </svg>
+);
+
 /** ⋯ 더보기 */
 export const MoreIcon = ({ size = 20, strokeWidth = 2.6 }: P) => (
   <svg {...base(size, strokeWidth)}>

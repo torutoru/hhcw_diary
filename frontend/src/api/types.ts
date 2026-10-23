@@ -30,6 +30,10 @@ export interface FeedListItem {
   photoCount: number;
   commentCount: number;
   comments: CommentPreview[];
+  /** 아직 열어 보지 않은 남의 피드 ("N" 표시) */
+  isNew: boolean;
+  /** 마지막으로 본 뒤 달린 남의 댓글 수 */
+  newComments: number;
 }
 
 export interface CommentPreview {

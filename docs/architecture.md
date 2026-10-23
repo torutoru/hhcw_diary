@@ -84,6 +84,7 @@
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
 | `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
 | `comments` | `feed_id`, `author_id`, `body`, `edited_at`(작성자가 고친 시각), `deleted_at`(작성자가 삭제한 시각, 본문은 비움) |
+| `feed_reads` | `user_id`, `feed_id`, `last_read_at` — 사람별·피드별 마지막으로 본 시각 ("N" 표시). 기준 시각은 `users.read_baseline_at`(기능 도입 시점 또는 승인 시점) |
 | `push_subscriptions` | `endpoint`(기기 구분), `user_id`, `p256dh`, `auth` — 웹 푸시 구독, 만료되면 자동 삭제 |
 | `storage_deletions` | `storage_key`(삭제에 실패한 R2 경로), `attempts`, `last_error` — 정각마다 재시도 |
 

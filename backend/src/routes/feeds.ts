@@ -51,6 +51,15 @@ const commentBody = z.object({
   body: z.string().trim().min(1, '댓글을 입력해 주세요.').max(500, '댓글은 500자까지 쓸 수 있어요.'),
 });
 
+/** "N" 표시 기준 시각: 이보다 오래된 피드·댓글은 본 것으로 친다 (기능 도입 시점 또는 승인 시점) */
+async function readBaseline(userId: string) {
+  const rs = await db.execute({
+    sql: 'SELECT COALESCE(read_baseline_at, approved_at, created_at) AS t FROM users WHERE id = ?',
+    args: [userId],
+  });
+  return String(rs.rows[0]?.t ?? new Date(0).toISOString());
+}
+
 async function feedPhotos(feedId: string) {
   const rs = await db.execute({
     sql: 'SELECT id, storage_key, thumb_key, width, height FROM images WHERE feed_id = ? ORDER BY position',
@@ -127,18 +136,26 @@ export async function feedRoutes(app: FastifyInstance) {
   // 메인 피드: 날짜 내림차순, 대표 사진 + 댓글 미리보기 2개
   app.get('/api/feeds', { preHandler: requireUser }, async (req) => {
     const { before, limit } = listQuery.parse(req.query);
+    const me = req.currentUser!.id;
+    const baseline = await readBaseline(me);
     const rs = await db.execute({
       sql: `SELECT f.id, f.feed_date,
               -- 메인 피드 카드는 리스트용 사진(1080px). 아직 없으면 원본
               (SELECT COALESCE(thumb_key, storage_key) FROM images i WHERE i.feed_id = f.id ORDER BY position LIMIT 1)
                 AS cover_key,
               (SELECT COUNT(*) FROM images i WHERE i.feed_id = f.id) AS photo_count,
-              (SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id) AS comment_count
+              (SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id) AS comment_count,
+              -- "N" 표시: 아직 열어 보지 않은 남의 피드 / 마지막으로 본 뒤 달린 남의 댓글 수
+              (f.author_id <> ? AND r.last_read_at IS NULL AND f.created_at > ?) AS is_new,
+              (SELECT COUNT(*) FROM comments c
+                 WHERE c.feed_id = f.id AND c.deleted_at IS NULL AND c.author_id <> ?
+                   AND c.created_at > COALESCE(r.last_read_at, ?)) AS new_comments
             FROM feeds f
+            LEFT JOIN feed_reads r ON r.feed_id = f.id AND r.user_id = ?
             WHERE (? IS NULL OR f.feed_date < ?)
             ORDER BY f.feed_date DESC
             LIMIT ?`,
-      args: [before ?? null, before ?? null, limit + 1],
+      args: [me, baseline, me, baseline, me, before ?? null, before ?? null, limit + 1],
     });
     const rows = rs.rows.slice(0, limit);
     const ids = rows.map((r) => String(r.id));
@@ -180,6 +197,8 @@ export async function feedRoutes(app: FastifyInstance) {
         photoCount: Number(r.photo_count),
         commentCount: Number(r.comment_count),
         comments: previews.get(String(r.id)) ?? [],
+        isNew: Number(r.is_new) === 1,
+        newComments: Number(r.new_comments),
       })),
     );
 
@@ -187,6 +206,28 @@ export async function feedRoutes(app: FastifyInstance) {
       items,
       nextBefore: rs.rows.length > limit ? items[items.length - 1].date : null,
     };
+  });
+
+  // 상세를 열면 읽음 처리. 이전에 본 시각(없으면 기준 시각)을 돌려줘서, 화면이 그 뒤 달린 댓글에 "N"을 붙인다
+  app.post<{ Params: { id: string } }>('/api/feeds/:id/read', { preHandler: requireUser }, async (req) => {
+    const me = req.currentUser!.id;
+    const [prev, baseline] = await Promise.all([
+      db.execute({
+        sql: 'SELECT last_read_at FROM feed_reads WHERE user_id = ? AND feed_id = ?',
+        args: [me, req.params.id],
+      }),
+      readBaseline(me),
+    ]);
+    const exists = await db.execute({ sql: 'SELECT 1 FROM feeds WHERE id = ?', args: [req.params.id] });
+    if (!exists.rows[0]) throw notFound('피드를 찾을 수 없어요.');
+
+    await db.execute({
+      sql: `INSERT INTO feed_reads (user_id, feed_id, last_read_at) VALUES (?, ?, ?)
+            ON CONFLICT(user_id, feed_id) DO UPDATE SET last_read_at = excluded.last_read_at`,
+      args: [me, req.params.id, nowISO()],
+    });
+    const previous = prev.rows[0]?.last_read_at;
+    return { previousReadAt: previous ? String(previous) : baseline };
   });
 
   // 달력용: 그 달에 피드가 있는 날짜 목록

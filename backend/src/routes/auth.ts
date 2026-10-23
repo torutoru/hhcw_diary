@@ -145,8 +145,11 @@ export async function authRoutes(app: FastifyInstance) {
           [
             { sql: 'UPDATE signup_tokens SET used_at = ? WHERE token = ?', args: [now, req.params.token] },
             {
-              sql: "UPDATE users SET status = 'active', approved_at = COALESCE(approved_at, ?) WHERE id = ?",
-              args: [now, row.user_id],
+              // read_baseline_at: 승인 전 피드·댓글에는 "N"을 붙이지 않는다
+              sql: `UPDATE users SET status = 'active', approved_at = COALESCE(approved_at, ?),
+                      read_baseline_at = COALESCE(read_baseline_at, ?)
+                    WHERE id = ?`,
+              args: [now, now, row.user_id],
             },
           ],
           'write',

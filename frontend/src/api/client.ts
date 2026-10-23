@@ -47,6 +47,8 @@ export const api = {
   feedByDate: (date: string) =>
     request<{ date: string; isToday: boolean; feed: FeedDetail | null }>(`/feeds/by-date/${date}`),
   feed: (id: string) => request<{ feed: FeedDetail }>(`/feeds/${id}`),
+  /** 읽음 처리. 이전에 본 시각을 돌려준다 (그 뒤 댓글에 "N") */
+  markRead: (id: string) => request<{ previousReadAt: string }>(`/feeds/${id}/read`, { method: 'POST' }),
   createFeed: (date: string, body: string, imageIds: string[]) =>
     request<{ feed: FeedDetail }>('/feeds', { method: 'POST', body: json({ date, body, imageIds }) }),
   updateFeed: (id: string, body: string, imageIds: string[]) =>
