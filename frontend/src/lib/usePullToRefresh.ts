@@ -62,10 +62,10 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, enabled: boolea
         set(0);
         return;
       }
-      // 새로고침 중에는 아이콘 자리만큼만 내려 둔다
+      // 놓으면 목록은 바로 제자리로 올리고, 새로고침 중 표시는 화면 전체를 덮는 회색 화면이 맡는다 (FeedPage)
       refreshingRef.current = true;
       setRefreshing(true);
-      set(PULL_THRESHOLD * 0.75);
+      set(0);
       const started = Date.now();
       try {
         await onRefreshRef.current();
@@ -74,7 +74,6 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, enabled: boolea
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
         refreshingRef.current = false;
         setRefreshing(false);
-        set(0);
       }
     };
 

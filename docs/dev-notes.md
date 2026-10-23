@@ -98,7 +98,7 @@
 ### 로딩 화면
 - 앱을 열 때 로그인 확인과 메인 피드 첫 불러오기에서는 **가족 문구**(사용자 작성 20개, [frontend/src/lib/familyQuotes.ts](../frontend/src/lib/familyQuotes.ts))를 6초마다 은은하게 바꿔 보여줍니다([LoadingQuotes.tsx](../frontend/src/components/LoadingQuotes.tsx)). 0.4초 안에 끝나면 보여주지 않고, 5초가 넘으면 "서버를 깨우고 있어요"로 바뀝니다(Render 무료 플랜 잠들기 대응). 두 로딩이 이어지면 같은 문구를 이어 갑니다.
 - 다음 10개는 바닥 1200px 전에 미리 불러오고, 그동안 아래쪽에 작은 스피너. 끝까지 보면 "모든 피드를 다 봤어요".
-- **당겨서 새로고침**([usePullToRefresh.ts](../frontend/src/lib/usePullToRefresh.ts)): 메인 피드 맨 위에서 아래로 당기면 목록이 따라 내려오고(저항 0.5, 최대 120px) 둥근 화살표 아이콘이 돌며 나타남. 72px 이상 당기고 놓으면 최신 피드부터 다시 불러옴(아이콘 최소 0.5초 회전). 상세가 열려 있으면 쉼. 당기는 동안 `touchmove`를 `preventDefault`(passive: false)하고, 피드 화면에서는 `overscroll-behavior-y: contain`으로 브라우저 기본 당겨서 새로고침을 끕니다.
+- **당겨서 새로고침**([usePullToRefresh.ts](../frontend/src/lib/usePullToRefresh.ts)): 메인 피드 맨 위에서 아래로 당기면 목록이 따라 내려오고(저항 0.5, 최대 120px), **드러난 위쪽 빈 공간(배경)**에 "불러오는 중"과 같은 모양(작은 아이콘 + 회색 글자)으로 "당겨서 새로고침" → "놓으면 새로고침"(초록)이 보임. 처음엔 흰 원형 버튼으로 떠 있게 만들었다가 "이질적"이라는 사용자 의견으로 바꿈. **놓으면** 목록은 바로 제자리로 올라가고, 새로고침 동안 **화면 전체를 투명한 옅은 회색이 덮고 가운데 진행 표시만 도는 화면**(`.refresh-overlay`, 화면 누르기 차단)을 띄움(사용자 요청). 72px 이상 당기고 놓으면 최신 피드부터 다시 불러옴(아이콘 최소 0.5초 회전). 상세가 열려 있으면 쉼. 당기는 동안 `touchmove`를 `preventDefault`(passive: false)하고, 피드 화면에서는 `overscroll-behavior-y: contain`으로 브라우저 기본 당겨서 새로고침을 끕니다.
 - 화면 안의 로딩은 글자 대신 **깜빡이는 스켈레톤**(`.skeleton` 애니메이션)을 실제 화면과 같은 자리에 보여줍니다. "불러오는 중"은 화면 읽기 기능용(`sr-only`)으로만 남깁니다.
   - 피드 상세(`DetailSkeleton`), 가족 구성원 관리(`MembersSkeleton`), 내 정보의 알림 칸(`NotificationSettings`)
   - 아직 글자로 남은 곳: 피드 작성·수정 화면(`ComposePage`)

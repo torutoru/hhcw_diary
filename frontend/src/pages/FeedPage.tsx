@@ -123,24 +123,29 @@ export default function FeedPage() {
         <ProfileMenu />
       </header>
 
-      {/* 당겨서 새로고침 아이콘: 당긴 만큼 내려오며 돌고, 충분히 당기면 초록색, 새로고침 중엔 계속 돈다 */}
-      <div
-        className={`ptr-indicator${pull >= PULL_THRESHOLD || refreshing ? ' is-ready' : ''}${
-          refreshing ? ' is-refreshing' : ''
-        }${dragging ? ' is-dragging' : ''}`}
-        style={{
-          opacity: Math.min(1, pull / (PULL_THRESHOLD * 0.6)),
-          transform: `translate(-50%, ${pull - 44}px)`,
-        }}
-        aria-hidden={pull === 0}
-      >
-        <span className="ptr-icon" style={refreshing ? undefined : { transform: `rotate(${pull * 3}deg)` }}>
-          <RefreshIcon size={20} />
-        </span>
-        <span className="sr-only" role="status">
-          {refreshing ? '새로고침 중' : pull >= PULL_THRESHOLD ? '놓으면 새로고침' : ''}
-        </span>
+      {/* 당겨서 새로고침: 목록이 내려가며 생긴 위쪽 빈 공간(배경)에 "불러오는 중"과 같은 모양의 작은 아이콘 + 회색 글자.
+          당기는 중엔 화살표가 돌고, 충분히 당기면 초록색 "놓으면 새로고침" */}
+      <div className="ptr-zone" aria-hidden={pull === 0}>
+        <div
+          className={`ptr-indicator loading-status${pull >= PULL_THRESHOLD ? ' is-ready' : ''}${
+            dragging ? ' is-dragging' : ''
+          }`}
+          style={{ height: pull, opacity: Math.min(1, pull / (PULL_THRESHOLD * 0.6)) }}
+        >
+          <span className="ptr-icon" style={{ transform: `rotate(${pull * 3}deg)` }} aria-hidden="true">
+            <RefreshIcon size={16} />
+          </span>
+          {pull >= PULL_THRESHOLD ? '놓으면 새로고침' : pull > 0 ? '당겨서 새로고침' : ''}
+        </div>
       </div>
+
+      {/* 놓은 뒤 새로고침 중: 화면 전체를 투명한 옅은 회색이 덮고 가운데 진행 표시만 돈다. 끝나면 사라짐 */}
+      {refreshing && (
+        <div className="refresh-overlay" role="status" aria-live="polite">
+          <span className="refresh-spinner" aria-hidden="true" />
+          <span className="sr-only">새로고침 중</span>
+        </div>
+      )}
 
       <main
         className={`feed-main has-fab${dragging ? ' is-pulling' : ''}`}
