@@ -9,7 +9,7 @@
 | [frontend/](frontend/) | React 18 · Vite · TypeScript · PWA(홈 화면 설치, 푸시 알림) | Netlify |
 | [backend/](backend/) | Node.js · Fastify 5 · TypeScript · sharp · web-push | Render |
 | DB | Turso (libSQL) — 이미지 외 모든 데이터 | |
-| 이미지 | Cloudflare R2 — WebP(200~400KB)만 저장, DB에는 키만 보관 | |
+| 이미지 | Cloudflare R2 — WebP만 저장(원본 2048px 200~400KB + 리스트용 1080px), DB에는 키만 보관 | |
 | [docs/](docs/) | 디자인 참고 자료, 설계·API·배포·PWA 문서, 개발 노트 | |
 
 서비스 이름은 환경변수(`VITE_APP_NAME`, `APP_NAME`)로 정합니다. 기본값은 "우리가족"입니다.

@@ -44,7 +44,7 @@ export default function ComposePage() {
   const discarded = useRef(new Set<string>());
   // 추가 사진을 길게 누르면 사진 위에 뜨는 메뉴 → "대표 사진으로 적용하기"
   const longPress = useLongPress();
-  const [menuFor, setMenuFor] = useState<{ slot: Slot; anchor: HTMLElement } | null>(null);
+  const [menuFor, setMenuFor] = useState<{ key: string; anchor: HTMLElement } | null>(null);
   const closeMenu = useCallback(() => setMenuFor(null), []);
 
   useEffect(() => {
@@ -102,12 +102,14 @@ export default function ComposePage() {
     setExtras((list) => list.map((s) => (s.key === slot.key ? { ...s, ...patch } : s)));
   }
 
-  /** 추가 사진을 대표 사진으로: 두 사진의 자리를 맞바꾼다 (원래 대표 사진은 그 추가 사진 자리로) */
-  function makeCover(slot: Slot) {
-    setExtras((list) => {
-      if (!cover) return list.filter((s) => s.key !== slot.key);
-      return list.map((s) => (s.key === slot.key ? cover : s));
-    });
+  /**
+   * 추가 사진을 대표 사진으로: 두 사진의 자리를 맞바꾼다 (원래 대표 사진은 그 추가 사진 자리로).
+   * 메뉴가 떠 있는 사이 업로드가 끝나거나 사진이 빠졌을 수 있어, 지금 상태에서 key 로 다시 찾는다
+   */
+  function makeCover(key: string) {
+    const slot = extras.find((s) => s.key === key);
+    if (!slot) return;
+    setExtras((list) => (cover ? list.map((s) => (s.key === key ? cover : s)) : list.filter((s) => s.key !== key)));
     setCover(slot);
   }
 
@@ -228,8 +230,8 @@ export default function ComposePage() {
             {extras.map((s, i) => (
               <div
                 key={s.key}
-                className={`thumb${menuFor?.slot.key === s.key ? ' is-pressed' : ''}`}
-                {...longPress((anchor) => setMenuFor({ slot: s, anchor }))}
+                className={`thumb${menuFor?.key === s.key ? ' is-pressed' : ''}`}
+                {...longPress((anchor) => setMenuFor({ key: s.key, anchor }))}
               >
                 <img src={s.preview} alt={`추가 사진 ${i + 1}`} decoding="async" />
                 <SlotState slot={s} />
@@ -237,7 +239,11 @@ export default function ComposePage() {
                   type="button"
                   className="thumb-remove"
                   aria-label="사진 빼기"
+                  // X 를 꾹 눌러도 사진의 길게 누르기(대표 사진 메뉴)가 시작되지 않게
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onContextMenu={(e) => e.stopPropagation()}
                   onClick={() => {
+                    if (menuFor?.key === s.key) setMenuFor(null);
                     discard(s);
                     setExtras((list) => list.filter((x) => x.key !== s.key));
                   }}
@@ -272,7 +278,7 @@ export default function ComposePage() {
                 label: '대표 사진으로 적용하기',
                 icon: <PhotoIcon size={18} strokeWidth={2} />,
                 onSelect: () => {
-                  makeCover(menuFor.slot);
+                  makeCover(menuFor.key);
                   setMenuFor(null);
                 },
               },

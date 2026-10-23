@@ -79,13 +79,13 @@
 
 | 테이블 | 주요 컬럼 |
 | --- | --- |
-| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각), `failed_logins`·`locked_until`(로그인 잠금), `font_size`(글자 크기 small/normal/large) |
+| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각), `failed_logins`·`locked_until`(로그인 잠금), `font_size`(글자 크기 small/normal/large), `approved_at`(승인 시각), `read_baseline_at`("N" 기준 시각: 기능 도입 시점, 이후 가입자는 비어 있어 승인 시각 사용) |
 | `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
-| `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |
+| `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes`, `uploader_id`(올린 사람: 본인 사진만 즉시 삭제), `created_at`(24시간 지난 미연결 사진 정리 기준) |
 | `comments` | `feed_id`, `author_id`, `body`, `edited_at`(작성자가 고친 시각), `deleted_at`(작성자가 삭제한 시각, 본문은 비움) |
 | `feed_reads` | `user_id`, `feed_id`, `last_read_at` — 사람별·피드별 마지막으로 본 시각 ("N" 표시). 기준 시각은 `users.read_baseline_at`(기능 도입 시점 또는 승인 시점) |
-| `push_subscriptions` | `endpoint`(기기 구분), `user_id`, `p256dh`, `auth` — 웹 푸시 구독, 만료되면 자동 삭제 |
+| `push_subscriptions` | `endpoint`(기기 구분), `user_id`, `p256dh`, `auth`, `user_agent`, `last_used_at` — 웹 푸시 구독, 만료되면 자동 삭제 |
 | `storage_deletions` | `storage_key`(삭제에 실패한 R2 경로), `attempts`, `last_error` — 정각마다 재시도 |
 
 - 이미지 파일은 R2에만 있고, DB에는 **R2 키(`images/2026-10/<uuid>.webp`)만** 저장합니다.
@@ -104,14 +104,16 @@
                                  · WebP 품질 88→50 이진 탐색으로
                                    400KB 이하 최고 품질 선택
                                  · 안 되면 1600 → 1280 → 1024px  ──▶ PUT images/YYYY-MM/<uuid>.webp
-                                 · images 행 저장 (feed_id = NULL)
- ◀── { id, url }
+                                 · 리스트용 1080px WebP           ──▶ PUT images/YYYY-MM/<uuid>_thumb.webp
+                                 · images 행 저장 (feed_id = NULL, uploader_id)
+ ◀── { id, url, thumbUrl, width, height, bytes }
  POST /api/feeds { imageIds }  ──▶  images.feed_id, position 연결
 ```
 
 - **브라우저 1차 축소**: 휴대폰 원본(5~10MB)을 그대로 보내지 않아 업로드가 빠릅니다. 1.5MB 이하는 그대로 보냅니다.
 - **서버 최종 변환**: Safari 등 일부 브라우저는 WebP 인코딩을 지원하지 않거나 품질이 일정하지 않아, 최종 변환은 서버에서 합니다.
 - **결과 크기**: 일반 사진은 2048px, 200~400KB 정도가 나옵니다. 압축이 가장 어려운 노이즈 이미지(4000×3000, 4.5MB JPEG)로 시험했을 때 1600×1200, 400KB가 나왔습니다. 원본이 작은 사진은 200KB보다 작을 수 있으며, 일부러 키우지 않습니다.
+
 ### 리스트용 사진 (썸네일)
 
 업로드할 때 두 벌을 저장합니다. 피드가 많이 쌓여도 메인 피드 스크롤이 가볍도록, 카드에는 작은 사진을 씁니다.
@@ -153,6 +155,6 @@
 ## 알려진 제약 / 다음 작업 후보
 
 - 메일 보안 검사기가 링크를 미리 열면(일부 회사 메일의 링크 검사) 승인 링크가 먼저 사용될 수 있습니다. 개인 메일(Gmail 등)에서는 문제가 없지만, 생기면 "승인하기" 버튼이 있는 확인 화면을 한 단계 두는 방식으로 바꿀 수 있습니다.
-- 로그인·가입 요청 횟수 제한(rate limit)이 아직 없습니다.
+- 가입 요청 횟수 제한(rate limit)이 아직 없습니다. 로그인은 계정 잠금(5회 실패 → 1시간)으로 대응합니다.
 - 비밀번호 변경·찾기 기능이 없습니다 (시안에 없음).
 - Render 무료 플랜은 15분 동안 요청이 없으면 잠들어서, 첫 요청이 30초 이상 걸릴 수 있습니다.

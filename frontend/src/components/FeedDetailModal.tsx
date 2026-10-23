@@ -76,8 +76,16 @@ function DetailSkeleton() {
   );
 }
 
-export default function FeedDetailModal() {
+/**
+ * 상세가 떠 있는 채로 다른 피드로 이동하면(알림 누르기 등) id 만 바뀐다.
+ * 이전 피드의 수정 중 댓글·펼침·불러오던 이전 댓글이 남지 않게 피드마다 새로 그린다
+ */
+export default function FeedDetailRoute() {
   const { id = '' } = useParams();
+  return <FeedDetailModal key={id} id={id} />;
+}
+
+function FeedDetailModal({ id }: { id: string }) {
   const navigate = useNavigate();
   const { onCommentAdded, onCommentDeleted, onCommentEdited, onFeedRead, closeTo } =
     useOutletContext<FeedOutletContext>();
@@ -102,6 +110,8 @@ export default function FeedDetailModal() {
   const [total, setTotal] = useState(0);
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  // 이전 댓글 불러오기 실패. 이 동안은 스크롤로 자동으로 다시 부르지 않고 "다시 시도" 버튼만 보여준다
+  const [olderError, setOlderError] = useState('');
   const loadingOlderRef = useRef(false);
   // 댓글 영역 펼침: 피드 내용은 위의 한 줄 요약으로 줄고, 댓글만 따로 스크롤된다
   const [expanded, setExpanded] = useState(false);
@@ -204,6 +214,7 @@ export default function FeedDetailModal() {
     if (loadingOlderRef.current || !hasOlder || comments.length === 0) return;
     loadingOlderRef.current = true;
     setLoadingOlder(true);
+    setOlderError('');
     try {
       const res = await api.comments(id, OLDER_PAGE, comments[0].id);
       const panel = panelRef.current;
@@ -216,7 +227,7 @@ export default function FeedDetailModal() {
       setHasOlder(res.hasMore);
       setTotal(res.total);
     } catch (err) {
-      alert((err as Error).message);
+      setOlderError((err as Error).message);
     } finally {
       loadingOlderRef.current = false;
       setLoadingOlder(false);
@@ -231,7 +242,7 @@ export default function FeedDetailModal() {
   }
 
   function onPanelScroll(e: UIEvent<HTMLDivElement>) {
-    if (e.currentTarget.scrollTop < LOAD_OLDER_AT) void loadOlder();
+    if (e.currentTarget.scrollTop < LOAD_OLDER_AT && !olderError) void loadOlder();
   }
 
   function startEdit(c: Comment) {
@@ -397,9 +408,14 @@ export default function FeedDetailModal() {
                   댓글 <span>{total}</span>
                 </h3>
                 {loadingOlder && <CommentsSkeleton />}
+                {!loadingOlder && olderError && (
+                  <p className="form-error" role="alert">
+                    이전 댓글을 불러오지 못했어요. {olderError}
+                  </p>
+                )}
                 {!loadingOlder && hasOlder && (
                   <button type="button" className="more-btn" onClick={() => void loadOlder()}>
-                    이전 댓글 더 보기
+                    {olderError ? '다시 시도' : '이전 댓글 더 보기'}
                   </button>
                 )}
                 {comments.map((c) => renderComment(c, feed.date))}

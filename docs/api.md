@@ -12,7 +12,7 @@
 | POST | `/auth/signup` | 가입 요청. `{ email, password(4자+), relation(가족관계), nickname(호칭) }` → 201. 관리자에게 승인 메일 발송. 가족관계가 '엄마'/'아빠'면 `parent`, 그 외 `member`. 승인 대기 중인 이메일로 다시 요청하면 정보 갱신 후 새 링크 발송. 이미 가입된 이메일, 이미 등록된 '엄마'/'아빠' 가족관계는 409 |
 | GET | `/signup/confirm/:token` | 승인 메일 링크. 처리 후 `{APP_URL}/signup/confirm?status=success\|expired\|used\|invalid\|taken&email=…&relation=…` 로 302 이동 |
 | POST | `/auth/login` | `{ email, password, remember? }` → `{ user }` + 쿠키. 틀리면 401(남은 횟수 안내), 승인 전·제거된 계정이면 403, **잠긴 계정이면 423**(풀리는 시각 안내). `remember: true` 면 400일 쿠키, 아니면 브라우저를 닫으면 사라지는 세션 쿠키(최대 1일) |
-| POST | `/auth/logout` | 쿠키 삭제 |
+| POST | `/auth/logout` | 쿠키 삭제 → `{ ok }` |
 | GET | `/auth/me` 🔒 | `{ user: User }`. `remember` 로 로그인한 세션이면 쿠키 만료를 다시 400일로 늘림 |
 | PATCH | `/auth/me` 🔒 | 내 정보 수정. `{ nickname?, fontSize? }` 중 바꿀 것만 (호칭 1~20자, 글자 크기 `'small' \| 'normal' \| 'large'`, 둘 다 없으면 400) → `{ user }`. 이메일·가족관계는 바꿀 수 없음 (보내도 무시) |
 
@@ -24,16 +24,16 @@ User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| GET | `/feeds?before=YYYY-MM-DD&limit=10` 🔒 | 최신순 목록. `{ items: FeedListItem[], nextBefore }`. 다음 페이지는 `before=nextBefore` |
+| GET | `/feeds?before=YYYY-MM-DD&limit=10` 🔒 | 최신순 목록(`limit` 기본 10, 최대 30). `{ items: FeedListItem[], nextBefore }`. 다음 페이지는 `before=nextBefore` |
 | GET | `/feeds/dates?month=YYYY-MM` 🔒 | 달력용(작성하기·검색하기). `{ month, today, dates: string[], feeds: { date, id }[] }` — 그 달에 피드가 있는 날짜와 피드 id |
 | GET | `/feeds/by-date/:date` 🔒 | `{ date, isToday, feed: FeedDetail \| null }` (작성/수정 화면용). 미래·없는 날짜는 400 |
 | GET | `/feeds/:id` 🔒 | `{ feed: FeedDetail }` |
-| POST | `/feeds/:id/read` 🔒 | 상세를 열 때 읽음 처리 → `{ previousReadAt }` (이전에 본 시각, 처음이면 기준 시각). 화면은 그 뒤 달린 남의 댓글에 "N" |
-| POST | `/feeds` 👪 | 피드 작성. `{ date?, body, imageIds: [대표, ...추가] }` (1~6장). `date` 없으면 오늘. 지난 날짜 가능, 미래는 400. 그 날짜에 이미 있으면 409 |
-| PUT | `/feeds/:id` 👪 | 피드 수정 (지난 날짜 포함). 본문은 `{ body, imageIds }`. 빠진 사진은 R2에서 삭제 |
+| POST | `/feeds/:id/read` 🔒 | 상세를 열 때 읽음 처리 → `{ previousReadAt }` (이전에 본 시각, 처음이면 기준 시각). 화면은 그 뒤 달린 남의 댓글에 "N". 없는 피드는 404 |
+| POST | `/feeds` 👪 | 피드 작성. `{ date?, body, imageIds: [대표, ...추가] }` (1~6장). `date` 없으면 오늘. 지난 날짜 가능, 미래는 400. 그 날짜에 이미 있으면 409 → 201 `{ feed: FeedDetail }` |
+| PUT | `/feeds/:id` 👪 | 피드 수정 (지난 날짜 포함). 본문은 `{ body, imageIds }`. 빠진 사진은 R2에서 삭제 → `{ feed: FeedDetail }`. 없는 피드는 404 |
 
 ```ts
-FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { id, author, authorRelation, body, deleted }[] /* 앞 2개 */,
+FeedListItem = { id, date, isToday, coverUrl, photoCount, commentCount, comments: { id, author, authorRelation, body, deleted }[] /* 가장 최근 댓글 1개 */,
                  isNew /* 안 본 남의 피드 */, newComments /* 마지막으로 본 뒤 남의 댓글 수 */ }
 FeedDetail   = { id, date, isToday, body, author, authorRelation, createdAt, updatedAt, commentCount, photos: { id, url /* 원본 */, thumbUrl /* 리스트용 */, width, height }[] }
 // FeedListItem.coverUrl 은 리스트용 사진

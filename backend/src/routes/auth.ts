@@ -77,13 +77,21 @@ export async function authRoutes(app: FastifyInstance) {
     const passwordHash = await bcrypt.hash(password, 10);
     let userId: string;
     if (existing.rows[0]) {
-      // 승인 대기 중이거나 제거된 계정이 다시 요청하면 정보를 갱신하고 새 링크를 보낸다
+      // 승인 대기 중이거나 제거된 계정이 다시 요청하면 정보를 갱신하고 새 링크를 보낸다.
+      // 예전 메일의 링크는 쓸 수 없게 한다: 관리자가 예전 메일(이전 정보)을 보고 승인했는데
+      // 덮어쓴 정보(다른 사람이 같은 이메일로 다시 요청한 비밀번호·가족관계)로 활성화되는 것을 막는다
       userId = String(existing.rows[0].id);
-      await db.execute({
-        sql: `UPDATE users SET password_hash = ?, relation = ?, nickname = ?, role = ?, removed_at = NULL
-              WHERE id = ?`,
-        args: [passwordHash, relation, nickname, role, userId],
-      });
+      await db.batch(
+        [
+          {
+            sql: `UPDATE users SET password_hash = ?, relation = ?, nickname = ?, role = ?, removed_at = NULL
+                  WHERE id = ?`,
+            args: [passwordHash, relation, nickname, role, userId],
+          },
+          { sql: 'UPDATE signup_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL', args: [now, userId] },
+        ],
+        'write',
+      );
     } else {
       userId = randomUUID();
       await db.execute({

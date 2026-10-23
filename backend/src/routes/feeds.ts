@@ -20,7 +20,11 @@ const PREVIEW_COMMENTS = 1;
 const feedDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않아요.')
-  .refine((d) => new Date(`${d}T00:00:00Z`).toISOString().slice(0, 10) === d, '없는 날짜예요.')
+  .refine((d) => {
+    // 13월처럼 아예 만들 수 없는 날짜는 Invalid Date 라 toISOString 이 예외를 던진다 → 400 으로
+    const t = new Date(`${d}T00:00:00Z`);
+    return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d;
+  }, '없는 날짜예요.')
   .refine((d) => d <= todayKST(), '아직 오지 않은 날의 피드는 쓸 수 없어요.');
 
 const feedBody = z.object({
@@ -135,7 +139,7 @@ async function photoStatements(feedId: string, imageIds: string[]) {
 }
 
 export async function feedRoutes(app: FastifyInstance) {
-  // 메인 피드: 날짜 내림차순, 대표 사진 + 댓글 미리보기 2개
+  // 메인 피드: 날짜 내림차순, 대표 사진 + 가장 최근 댓글 1개
   app.get('/api/feeds', { preHandler: requireUser }, async (req) => {
     const { before, limit } = listQuery.parse(req.query);
     const me = req.currentUser!.id;
@@ -443,7 +447,7 @@ export async function feedRoutes(app: FastifyInstance) {
             kind: 'comment',
             title: config.APP_NAME,
             body: `${displayName(me.nickname, me.relation)}: ${body.length > 60 ? `${body.slice(0, 60)}…` : body}`,
-            // #comments: 상세를 열면 댓글을 끝까지 불러와 최신 댓글 위치로 스크롤
+            // #comments: 상세를 열면 최근 댓글이 보이는 맨 아래로 스크롤
             url: `/feeds/${req.params.id}#comments`,
             tag: `comments-${req.params.id}`,
             feedLabel,
