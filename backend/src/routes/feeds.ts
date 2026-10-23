@@ -168,10 +168,10 @@ export async function feedRoutes(app: FastifyInstance) {
       const crs = await db.execute({
         sql: `SELECT id, feed_id, author, author_relation, body, deleted_at FROM (
                 SELECT c.id, c.feed_id, u.nickname AS author, u.relation AS author_relation, c.body, c.deleted_at,
-                  ROW_NUMBER() OVER (PARTITION BY c.feed_id ORDER BY c.created_at) AS rn
+                  ROW_NUMBER() OVER (PARTITION BY c.feed_id ORDER BY c.created_at DESC, c.id DESC) AS rn
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id IN (${ids.map(() => '?').join(',')})
-              ) WHERE rn <= ?`,
+              ) WHERE rn <= ? ORDER BY rn`,
         args: [...ids, PREVIEW_COMMENTS],
       });
       for (const c of crs.rows) {
@@ -319,7 +319,7 @@ export async function feedRoutes(app: FastifyInstance) {
     return { feed: await feedDetail(req.params.id) };
   });
 
-  // 댓글: 오래된 순, 5개씩 더보기. 삭제된 댓글도 자리를 지키며 deleted: true 로 내려간다
+  // 댓글: 최신순, 5개씩 더보기(더 오래된 댓글). 삭제된 댓글도 자리를 지키며 deleted: true 로 내려간다
   app.get<{ Params: { id: string } }>('/api/feeds/:id/comments', { preHandler: requireUser }, async (req) => {
     const { offset, limit } = commentsQuery.parse(req.query);
     const [list, count] = await db.batch(
@@ -329,7 +329,7 @@ export async function feedRoutes(app: FastifyInstance) {
                   u.nickname AS author, u.relation AS author_relation
                 FROM comments c JOIN users u ON u.id = c.author_id
                 WHERE c.feed_id = ?
-                ORDER BY c.created_at
+                ORDER BY c.created_at DESC, c.id DESC
                 LIMIT ? OFFSET ?`,
           args: [req.params.id, limit, offset],
         },

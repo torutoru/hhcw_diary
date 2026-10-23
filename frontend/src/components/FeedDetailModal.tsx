@@ -15,8 +15,8 @@ import type { FeedOutletContext } from '../pages/FeedPage';
 import { CheckIcon, CloseIcon, MoreIcon, PencilIcon, SendIcon, TrashIcon } from './Icons';
 
 const PAGE = 5;
-// 댓글 알림으로 열 때 한 번에 불러오는 최대 개수 (API 상한)
-const COMMENTS_MAX = 50;
+// 댓글 영역으로 이동할 때 "댓글 N" 제목 위에 남기는 여백
+const COMMENTS_SCROLL_GAP = 8;
 
 /**
  * 상세를 불러오는 동안 보여주는 뼈대(스켈레톤). 실제 화면과 같은 자리에 회색 틀을 두고,
@@ -82,9 +82,10 @@ export default function FeedDetailModal() {
   // 열었던 화면(메인 피드 또는 검색 달력)으로 돌아간다
   const close = () => navigate(closeTo);
 
-  // 댓글 알림으로 열면(주소 끝 #comments) 댓글을 끝까지 불러와 최신 댓글 위치로 스크롤한다
+  // 댓글은 최신순. 댓글 알림으로 열면(주소 끝 #comments) 댓글 영역 맨 위(최신 댓글)로 스크롤한다
   const focusComments = location.hash === '#comments';
   const bodyRef = useRef<HTMLDivElement>(null);
+  const commentsRef = useRef<HTMLDivElement>(null);
   const scrollToComments = useRef(false);
 
   // 열면 읽음 처리 → 메인 피드 카드의 "N"도 지운다
@@ -108,7 +109,7 @@ export default function FeedDetailModal() {
     let alive = true;
     setFeed(null);
     setError('');
-    Promise.all([api.feed(id), api.comments(id, 0, focusComments ? COMMENTS_MAX : PAGE)])
+    Promise.all([api.feed(id), api.comments(id, 0, PAGE)])
       .then(([f, c]) => {
         if (!alive) return;
         setFeed(f.feed);
@@ -122,18 +123,21 @@ export default function FeedDetailModal() {
     };
   }, [id, focusComments]);
 
-  // 스크롤 영역(.modal-body)의 위치를 직접 맨 아래로 지정한다.
+  // 스크롤 영역(.modal-body)의 위치를 직접 댓글 영역 맨 위로 지정한다.
   // scrollIntoView 는 떠 있는 창 안의 스크롤 영역에서 아이폰 등이 무시하거나 중간에 멈출 수 있어서 쓰지 않는다.
   // 그린 직후 한 번, 사진·글꼴이 늦게 들어와 높이가 바뀔 때를 대비해 조금 뒤에 두 번 더 맞춘다
   useEffect(() => {
     if (!feed || !scrollToComments.current) return;
     scrollToComments.current = false;
-    const toBottom = () => {
+    const toComments = () => {
       const body = bodyRef.current;
-      if (body) body.scrollTop = body.scrollHeight;
+      const section = commentsRef.current;
+      if (body && section) {
+        body.scrollTop += section.getBoundingClientRect().top - body.getBoundingClientRect().top - COMMENTS_SCROLL_GAP;
+      }
     };
-    const frame = requestAnimationFrame(toBottom);
-    const timers = [300, 900].map((ms) => window.setTimeout(toBottom, ms));
+    const frame = requestAnimationFrame(toComments);
+    const timers = [300, 900].map((ms) => window.setTimeout(toComments, ms));
     return () => {
       cancelAnimationFrame(frame);
       timers.forEach((t) => window.clearTimeout(t));
@@ -158,7 +162,11 @@ export default function FeedDetailModal() {
     setLoadingMore(true);
     try {
       const res = await api.comments(id, comments.length, PAGE);
-      setComments((prev) => [...prev, ...res.items]);
+      // 보는 사이 새 댓글이 달리면 순서가 한 칸씩 밀려 이미 받은 댓글이 다시 올 수 있어 걸러낸다
+      setComments((prev) => {
+        const seen = new Set(prev.map((c) => c.id));
+        return [...prev, ...res.items.filter((c) => !seen.has(c.id))];
+      });
       setTotal(res.total);
     } finally {
       setLoadingMore(false);
@@ -196,15 +204,11 @@ export default function FeedDetailModal() {
       }
 
       const { comment } = await api.addComment(id, body);
-      // 남은 댓글이 있으면 먼저 다 불러온 뒤 새 댓글을 붙여 순서를 지킨다
-      let list = comments;
-      if (comments.length < total) {
-        const rest = await api.comments(id, comments.length, total - comments.length);
-        list = [...comments, ...rest.items];
-      }
-      setComments([...list, comment]);
+      // 최신순이라 새 댓글은 맨 위. 내가 쓴 댓글이 보이게 댓글 영역 맨 위로 이동
+      setComments((list) => [comment, ...list]);
       setTotal((t) => t + 1);
       setDraft('');
+      scrollToComments.current = true;
       onCommentAdded(id, {
         id: comment.id,
         author: comment.author,
@@ -313,7 +317,7 @@ export default function FeedDetailModal() {
 
               <div className="section-gap" />
 
-              <div className="comments">
+              <div className="comments" ref={commentsRef}>
                 <h3>
                   댓글 <span>{total}</span>
                 </h3>

@@ -32,6 +32,8 @@ export function useMonthFeeds(month: string) {
     let alive = true;
     setLoading(true);
     setError('');
+    // 달을 바꾸면 이전 달 점이 같은 날짜에 잠깐 남지 않게 비운다
+    setFeeds(new Map());
     api
       .feedDates(month)
       .then((res) => alive && setFeeds(new Map(res.feeds.map((f) => [f.date, f.id]))))
@@ -94,7 +96,8 @@ export default function MonthCalendar({ month, onMonthChange, feeds, loading, is
           </button>
         </div>
 
-        <div className="calendar-grid" role="grid">
+        {/* 불러오는 동안 날짜 칸이 깜빡이는 스켈레톤. 응답이 오면 파란 점과 함께 보통 칸으로 */}
+        <div className={`calendar-grid${loading ? ' is-loading' : ''}`} role="grid">
           {WEEKDAYS.map((w, i) => (
             <span key={w} className={`calendar-weekday${i === 0 ? ' is-sun' : ''}`} role="columnheader">
               {w}
@@ -123,6 +126,11 @@ export default function MonthCalendar({ month, onMonthChange, feeds, loading, is
             );
           })}
         </div>
+        {loading && (
+          <span className="sr-only" role="status">
+            피드가 있는 날을 불러오는 중이에요
+          </span>
+        )}
       </section>
       <div className="calendar-legend">{legend}</div>
     </>
