@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api } from '../api/client';
-import type { User } from '../api/types';
+import type { FontSize, User } from '../api/types';
+import { applyFontSize } from '../lib/fontSize';
 import { disablePush, resyncPush } from '../lib/notifications';
 
 interface AuthState {
@@ -9,6 +10,7 @@ interface AuthState {
   login: (email: string, password: string, remember: boolean) => Promise<void>;
   logout: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
+  updateFontSize: (fontSize: FontSize) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -43,12 +45,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateNickname = useCallback(async (nickname: string) => {
-    const res = await api.updateMe(nickname);
+    const res = await api.updateMe({ nickname });
     setUser(res.user);
   }, []);
 
+  // 누르는 즉시 화면에 적용하고 저장한다. 저장에 실패하면 원래 크기로 되돌린다
+  const updateFontSize = useCallback(
+    async (fontSize: FontSize) => {
+      const prev = user?.fontSize ?? 'normal';
+      applyFontSize(fontSize);
+      try {
+        const res = await api.updateMe({ fontSize });
+        setUser(res.user);
+      } catch (err) {
+        applyFontSize(prev);
+        throw err;
+      }
+    },
+    [user?.fontSize],
+  );
+
+  // 로그인한 계정의 설정을 화면 전체에 적용 (로그아웃해도 이 기기의 마지막 크기는 유지)
+  useEffect(() => {
+    if (user) applyFontSize(user.fontSize);
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateNickname }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateNickname, updateFontSize }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

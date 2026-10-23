@@ -8,7 +8,7 @@ import { conflict, forbidden, HttpError, unauthorized } from '../lib/errors.js';
 import { roleForRelation } from '../lib/family.js';
 import { sendMail } from '../lib/mailer.js';
 import { formatKST, formatKSTClock, nowISO } from '../lib/time.js';
-import { clearSession, requireUser, setSession, toSessionUser } from '../plugins/auth.js';
+import { clearSession, FONT_SIZES, requireUser, setSession, toSessionUser } from '../plugins/auth.js';
 import { approvalEmail } from '../templates/approvalEmail.js';
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 승인 링크 1시간
@@ -22,7 +22,10 @@ const signupBody = z.object({
   nickname,
 });
 
-const updateMeBody = z.object({ nickname });
+// 바꿀 항목만 보낸다 (호칭 저장, 글자 크기 선택이 따로 일어난다)
+const updateMeBody = z
+  .object({ nickname: nickname.optional(), fontSize: z.enum(FONT_SIZES, { message: '글자 크기는 작게, 보통, 크게 중에서 골라 주세요.' }).optional() })
+  .refine((b) => b.nickname !== undefined || b.fontSize !== undefined, '바꿀 내용이 없어요.');
 
 const loginBody = z.object({
   email: z.string().trim().toLowerCase(),
@@ -171,7 +174,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password, remember } = loginBody.parse(req.body);
     const rs = await db.execute({
-      sql: `SELECT id, email, nickname, relation, role, status, removed_at, password_hash, locked_until
+      sql: `SELECT id, email, nickname, relation, role, font_size, status, removed_at, password_hash, locked_until
             FROM users WHERE email = ?`,
       args: [email],
     });
@@ -233,10 +236,14 @@ export async function authRoutes(app: FastifyInstance) {
     return { user: req.currentUser };
   });
 
-  // 내 정보 수정: 호칭만 바꿀 수 있다 (이메일, 가족관계는 고정)
+  // 내 정보 수정: 호칭과 글자 크기만 바꿀 수 있다 (이메일, 가족관계는 고정)
   app.patch('/api/auth/me', { preHandler: requireUser }, async (req) => {
-    const { nickname } = updateMeBody.parse(req.body);
-    await db.execute({ sql: 'UPDATE users SET nickname = ? WHERE id = ?', args: [nickname, req.currentUser!.id] });
-    return { user: { ...req.currentUser!, nickname } };
+    const body = updateMeBody.parse(req.body);
+    const user = { ...req.currentUser!, ...body };
+    await db.execute({
+      sql: 'UPDATE users SET nickname = ?, font_size = ? WHERE id = ?',
+      args: [user.nickname, user.fontSize, user.id],
+    });
+    return { user };
   });
 }

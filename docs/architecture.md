@@ -79,7 +79,7 @@
 
 | 테이블 | 주요 컬럼 |
 | --- | --- |
-| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각), `failed_logins`·`locked_until`(로그인 잠금) |
+| `users` | `email`(unique), `password_hash`, `relation`(가족관계, 권한 기준), `nickname`(호칭, 화면 표시), `role`, `status`(pending/active), `removed_at`(제거 시각), `failed_logins`·`locked_until`(로그인 잠금), `font_size`(글자 크기 small/normal/large) |
 | `signup_tokens` | `token`(uuid), `user_id`, `expires_at`(1시간), `used_at` |
 | `feeds` | `feed_date`(KST `YYYY-MM-DD`, **unique** → 하루 한 번), `author_id`, `body` |
 | `images` | `storage_key`(원본 R2 키), `thumb_key`(리스트용 R2 키), `feed_id`, `position`(0 = 대표), `width`, `height`, `bytes` |

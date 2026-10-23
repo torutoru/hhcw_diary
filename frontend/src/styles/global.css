@@ -24,6 +24,8 @@
   --font-display: 'Gowun Dodum', 'Noto Sans KR', sans-serif;
   --radius: 14px;
   --app-width: 480px;
+  /* 글자 크기 배율 (내 정보 > 글자 크기). 작게 0.75 · 보통 1 · 크게 1.25 — lib/fontSize.ts 가 바꾼다 */
+  --font-scale: 1;
 }
 
 * {
@@ -37,6 +39,9 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   -webkit-text-size-adjust: 100%;
+  /* 앱 화면 확대(두 손가락·두 번 탭)를 막는다. 확대는 사진 크게 보기에서만
+     (react-zoom-pan-pinch 가 터치 이벤트로 직접 처리하므로 이 설정과 상관없이 동작) */
+  touch-action: pan-x pan-y;
 }
 
 a {
@@ -91,7 +96,7 @@ textarea {
   gap: 6px;
 }
 .field label {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 500;
 }
 .input {
@@ -99,7 +104,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0 16px;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   background: var(--surface);
   color: var(--text);
   width: 100%;
@@ -125,7 +130,7 @@ textarea {
   min-width: 0;
 }
 .relation-tag {
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale));
   font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
@@ -137,11 +142,11 @@ textarea {
   border: 1.5px solid var(--danger-border);
 }
 .hint {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 .error-text {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--danger);
 }
 .check {
@@ -149,7 +154,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   color: var(--text);
   cursor: pointer;
   user-select: none;
@@ -174,7 +179,7 @@ textarea {
 .slow-hint {
   margin: -6px 0 0;
   text-align: center;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -184,7 +189,7 @@ textarea {
   border-radius: 12px;
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.5;
 }
 
@@ -192,7 +197,7 @@ textarea {
 .btn {
   height: 54px;
   border-radius: var(--radius);
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -219,7 +224,7 @@ textarea {
   background: transparent;
   border: 1.5px solid var(--primary);
   color: var(--primary);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   font-weight: 500;
 }
 .btn-text {
@@ -227,7 +232,7 @@ textarea {
   background: transparent;
   border: 0;
   color: var(--primary);
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   cursor: pointer;
 }
 .icon-btn {
@@ -253,14 +258,14 @@ textarea {
   background: #c8382a;
   color: #fff;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale));
   font-weight: 700;
   line-height: 18px;
   text-align: center;
   align-self: center;
 }
 .badge-today {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 999px;
@@ -294,12 +299,12 @@ textarea {
 }
 .brand h1 {
   margin: 0;
-  font-size: 34px;
+  font-size: calc(34px * var(--font-scale));
   letter-spacing: -0.5px;
 }
 .brand p {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   color: var(--text-muted);
 }
 .stack {
@@ -310,7 +315,7 @@ textarea {
 .auth-foot {
   margin: auto 0 0;
   text-align: center;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -330,11 +335,11 @@ textarea {
 }
 .page-title {
   margin: 0;
-  font-size: 28px;
+  font-size: calc(28px * var(--font-scale));
 }
 .page-desc {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -349,7 +354,7 @@ textarea {
 }
 .guide p {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.6;
   color: var(--text);
 }
@@ -368,11 +373,11 @@ textarea {
 }
 .result h1 {
   margin: 0;
-  font-size: 27px;
+  font-size: calc(27px * var(--font-scale));
 }
 .result p {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.7;
   color: var(--text-muted);
   white-space: pre-line;
@@ -412,7 +417,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 21px;
+  font-size: calc(21px * var(--font-scale));
   min-width: 0;
 }
 /* 서비스 이름이 길면 말줄임 (VITE_APP_NAME) */
@@ -467,10 +472,10 @@ textarea {
   min-width: 0;
 }
 .profile-me-text b {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 .profile-me-text span {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -485,7 +490,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   color: var(--text);
   text-decoration: none;
   cursor: pointer;
@@ -669,7 +674,7 @@ button.fab {
   padding: 8px 14px;
   border-radius: 999px;
   background: var(--surface);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(29, 38, 32, 0.18);
@@ -747,13 +752,13 @@ button.fab {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
 }
 .photo-count {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 .feed-cover {
@@ -769,7 +774,7 @@ button.fab {
   flex-direction: column;
   gap: 6px;
   padding: 0 2px 2px;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.5;
 }
 .comment-line {
@@ -784,13 +789,13 @@ button.fab {
   padding: 60px 20px;
   text-align: center;
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.7;
 }
 .feed-status {
   padding: 16px;
   text-align: center;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   color: var(--text-muted);
 }
 
@@ -801,6 +806,8 @@ button.fab {
   z-index: 50;
   display: flex;
   justify-content: center;
+  /* 모달 위 끌기가 뒤 페이지로 넘어가지 않게 */
+  overscroll-behavior: contain;
 }
 .modal-backdrop {
   position: absolute;
@@ -837,7 +844,7 @@ button.fab {
 }
 .modal-head-text h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: calc(20px * var(--font-scale));
 }
 .modal-title-row {
   display: flex;
@@ -847,7 +854,7 @@ button.fab {
 }
 /* 엄마·아빠에게만 보이는 날짜 옆 "수정하기". 글자는 작게, 누르는 영역은 넉넉하게 */
 .edit-link {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 700;
   color: var(--primary);
   text-decoration: underline;
@@ -863,6 +870,8 @@ button.fab {
 .modal-body {
   flex: 1;
   overflow-y: auto;
+  /* 댓글 목록이 끝에 닿아도 스크롤이 뒤 목록으로 넘어가지 않게 */
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -904,7 +913,7 @@ button.fab {
   position: absolute;
   top: 10px;
   right: 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 999px;
@@ -914,7 +923,7 @@ button.fab {
 .feed-body {
   margin: 0;
   padding: 0 20px;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   line-height: 1.75;
   white-space: pre-line;
   word-break: break-word;
@@ -931,7 +940,7 @@ button.fab {
 }
 .comments h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 700;
 }
 .comments h3 span {
@@ -949,7 +958,7 @@ button.fab {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
   color: var(--text);
 }
@@ -965,14 +974,14 @@ button.fab {
   gap: 6px;
 }
 .comment-meta b {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 .comment-meta span {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-muted);
 }
 .comment-text {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.55;
   word-break: break-word;
 }
@@ -1007,7 +1016,7 @@ button.fab {
 .comment.is-deleted .comment-text,
 .comment-line.is-deleted {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 /* 상세 모달 위에 확인 시트가 뜬다 */
 .modal-root .sheet-root {
@@ -1019,7 +1028,7 @@ button.fab {
   border-radius: 12px;
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 500;
   cursor: pointer;
 }
@@ -1039,7 +1048,7 @@ button.fab {
   padding: 8px 10px 0 20px;
   border-top: 1px solid var(--divider);
   background: var(--surface);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 700;
   color: var(--primary);
 }
@@ -1053,7 +1062,7 @@ button.fab {
   border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 700;
   cursor: pointer;
 }
@@ -1105,7 +1114,7 @@ button.fab {
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0 18px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   background: var(--surface-soft);
   color: var(--text);
 }
@@ -1145,10 +1154,10 @@ button.fab {
   gap: 2px;
 }
 .install-card-text b {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
 }
 .install-card-text span {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 .install-card-btn {
@@ -1159,7 +1168,7 @@ button.fab {
   border-radius: 12px;
   background: var(--primary);
   color: #fff;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1187,7 +1196,7 @@ button.fab {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.6;
 }
 .install-steps svg {
@@ -1199,11 +1208,11 @@ button.fab {
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--bg);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 .field-label {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 500;
 }
 .notify-box {
@@ -1217,13 +1226,60 @@ button.fab {
 }
 .notify-box p {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.6;
   color: var(--text-muted);
 }
 .notify-btn {
   height: 46px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
+}
+/* 내 정보 > 글자 크기: "가"를 실제 크기로 보여 주는 세 칸 */
+.font-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.font-size-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 92px;
+  padding: 10px 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.font-size-option[aria-checked='true'] {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.font-size-option:disabled {
+  cursor: default;
+}
+/* 미리보기 "가"는 현재 설정과 상관없이 보통(22px) 기준 75% · 100% · 125% 로 고정 */
+.font-size-sample {
+  font-weight: 700;
+  line-height: 1;
+}
+.font-size-sample.is-small {
+  font-size: 16.5px;
+}
+.font-size-sample.is-normal {
+  font-size: 22px;
+}
+.font-size-sample.is-large {
+  font-size: 27.5px;
+}
+.font-size-name {
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 500;
 }
 .offline-banner {
   position: fixed;
@@ -1236,7 +1292,7 @@ button.fab {
   padding: 10px 16px;
   background: var(--text);
   color: #fff;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   text-align: center;
 }
 .toast-actions {
@@ -1270,7 +1326,7 @@ button.fab {
 }
 .calendar-head h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: calc(20px * var(--font-scale));
 }
 .calendar-head .icon-btn:disabled {
   opacity: 0.3;
@@ -1286,7 +1342,7 @@ button.fab {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -1323,7 +1379,7 @@ button.fab {
   color: var(--primary);
 }
 .calendar-num {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1;
 }
 /* 점 자리는 항상 비워 두고, 피드가 있는 날만 색을 채운다 (숫자 위치가 흔들리지 않게) */
@@ -1342,7 +1398,7 @@ button.fab {
   flex-wrap: wrap;
   gap: 8px 18px;
   padding: 0 4px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 .calendar-legend > span {
@@ -1385,7 +1441,7 @@ button.fab {
   background: linear-gradient(rgba(12, 16, 13, 0.7), rgba(12, 16, 13, 0));
 }
 .lightbox-count {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 700;
 }
 .lightbox-btn {
@@ -1485,13 +1541,13 @@ button.fab {
   padding: 0 12px;
   display: flex;
   align-items: center;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   color: var(--text-muted);
   text-decoration: none;
 }
 .compose-header h1 {
   margin: 0;
-  font-size: 19px;
+  font-size: calc(19px * var(--font-scale));
 }
 .compose {
   flex: 1;
@@ -1504,7 +1560,7 @@ button.fab {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 500;
 }
 .compose-section {
@@ -1513,7 +1569,7 @@ button.fab {
   gap: 8px;
 }
 .compose-label {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
 }
 .compose-label .req {
@@ -1535,7 +1591,7 @@ button.fab {
   justify-content: center;
   gap: 10px;
   color: var(--primary);
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 500;
   cursor: pointer;
 }
@@ -1563,7 +1619,7 @@ button.fab {
   border-radius: 999px;
   background: rgba(29, 38, 32, 0.8);
   color: #fff;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   cursor: pointer;
 }
 .thumbs {
@@ -1616,7 +1672,7 @@ button.fab {
   justify-content: center;
   border-radius: inherit;
   background: rgba(244, 242, 236, 0.72);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 700;
   color: var(--text);
   text-align: center;
@@ -1632,7 +1688,7 @@ button.fab {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.6;
   background: var(--surface);
   color: var(--text);
@@ -1658,7 +1714,7 @@ button.fab {
 }
 .sub-header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: calc(20px * var(--font-scale));
 }
 .members {
   flex: 1;
@@ -1674,7 +1730,7 @@ button.fab {
 }
 .members-section h2 {
   margin: 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -1691,7 +1747,7 @@ button.fab {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
 }
 .member-text {
   flex: 1;
@@ -1701,10 +1757,10 @@ button.fab {
   gap: 2px;
 }
 .member-text b {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
 }
 .member-me .member-text b {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
 }
 .member-name {
   display: flex;
@@ -1712,17 +1768,17 @@ button.fab {
   gap: 6px;
 }
 .member-email {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .member-me .member-email {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 .badge-admin {
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale));
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -1750,7 +1806,7 @@ button.fab {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
 }
 .remove-btn {
   height: 40px;
@@ -1759,7 +1815,7 @@ button.fab {
   border-radius: 12px;
   background: var(--surface);
   color: var(--danger);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
   cursor: pointer;
 }
@@ -1769,7 +1825,7 @@ button.fab {
 .member-empty {
   padding: 28px 16px;
   text-align: center;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   color: var(--text-muted);
 }
 .members-note {
@@ -1784,7 +1840,7 @@ button.fab {
 }
 .no-access h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale));
 }
 .result-icon.is-locked {
   width: 80px;
@@ -1805,7 +1861,7 @@ button.fab {
   border-radius: 14px;
   background: var(--text);
   color: #fff;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1817,7 +1873,7 @@ button.fab {
   border: 0;
   background: transparent;
   color: var(--accent);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 700;
   cursor: pointer;
 }
@@ -1845,11 +1901,11 @@ button.fab {
 }
 .sheet h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--font-scale));
 }
 .sheet p {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.65;
   color: var(--text-muted);
   word-break: break-all;
@@ -1863,7 +1919,7 @@ button.fab {
   flex: 1;
   height: 52px;
   border-radius: 14px;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   cursor: pointer;
 }
 .sheet-actions button:disabled {
@@ -2001,14 +2057,14 @@ button.fab {
 }
 .loading-quote-mark {
   font-family: var(--font-display);
-  font-size: 44px;
+  font-size: calc(44px * var(--font-scale));
   line-height: 1;
   color: var(--primary);
   opacity: 0.35;
 }
 .loading-quote blockquote {
   margin: 0;
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
   line-height: 1.8;
   color: var(--text);
   word-break: keep-all;
@@ -2018,7 +2074,7 @@ button.fab {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -2048,7 +2104,7 @@ button.fab {
 .feed-end {
   margin: 8px 0 0;
   text-align: center;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 
@@ -2058,5 +2114,5 @@ button.fab {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }

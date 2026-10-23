@@ -141,6 +141,8 @@ async function addMissingColumns() {
   await addColumnIfMissing('comments', 'edited_at', 'TEXT');
   // 리스트용 작은 사진(1080px)의 저장소 키. 기능 추가 전 사진은 비어 있고, 화면에서는 원본을 대신 쓴다
   await addColumnIfMissing('images', 'thumb_key', 'TEXT');
+  // 글자 크기 설정: 'small'(75%) | 'normal'(100%) | 'large'(125%)
+  await addColumnIfMissing('users', 'font_size', "TEXT NOT NULL DEFAULT 'normal'");
 }
 
 export async function migrate(log: (msg: string) => void) {

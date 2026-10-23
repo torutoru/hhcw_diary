@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import type { Comment, FeedDetail } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { DELETED_COMMENT_TEXT } from '../lib/comments';
+import { lockScroll, unlockScroll } from '../lib/scrollLock';
 import ConfirmSheet from './ConfirmSheet';
 import Lightbox from './Lightbox';
 import NewBadge from './NewBadge';
@@ -139,17 +140,18 @@ export default function FeedDetailModal() {
     };
   }, [feed, comments]);
 
-  // 열려 있는 동안 배경 스크롤을 막고, Esc 로 닫는다
+  // 열려 있는 동안 뒤 페이지(목록)를 그 자리에 고정한다. 닫으면 보던 위치 그대로 (아이폰 대응, lib/scrollLock)
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     closeRef.current?.focus();
+    return unlockScroll;
+  }, []);
+
+  // Esc 로 닫는다
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && navigate(closeTo);
     window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [navigate, closeTo]);
 
   async function loadMore() {

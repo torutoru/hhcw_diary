@@ -9,6 +9,8 @@ const REMEMBER_MAX_AGE = 60 * 60 * 24 * 400;
 const SESSION_ONLY_MAX_AGE = 60 * 60 * 24;
 
 export type Role = 'parent' | 'member';
+export const FONT_SIZES = ['small', 'normal', 'large'] as const;
+export type FontSize = (typeof FONT_SIZES)[number];
 
 export interface SessionUser {
   id: string;
@@ -18,6 +20,8 @@ export interface SessionUser {
   /** 가족관계: 권한 기준 */
   relation: string;
   role: Role;
+  /** 글자 크기 설정 (화면 전체에 적용) */
+  fontSize: FontSize;
 }
 
 declare module '@fastify/jwt' {
@@ -41,7 +45,7 @@ export async function requireUser(req: FastifyRequest) {
   }
   // 승인 상태나 권한이 바뀔 수 있어 매 요청 DB에서 다시 읽는다
   const rs = await db.execute({
-    sql: "SELECT id, email, nickname, relation, role FROM users WHERE id = ? AND status = 'active'",
+    sql: "SELECT id, email, nickname, relation, role, font_size FROM users WHERE id = ? AND status = 'active'",
     args: [req.user.sub],
   });
   const row = rs.rows[0];
@@ -56,6 +60,7 @@ export function toSessionUser(row: Record<string, unknown>): SessionUser {
     nickname: String(row.nickname),
     relation: String(row.relation),
     role: row.role as Role,
+    fontSize: FONT_SIZES.includes(row.font_size as FontSize) ? (row.font_size as FontSize) : 'normal',
   };
 }
 

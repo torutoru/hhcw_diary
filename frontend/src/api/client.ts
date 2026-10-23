@@ -1,4 +1,4 @@
-import type { Comment, FeedDetail, FeedListResponse, Member, UploadedImage, User } from './types';
+import type { Comment, FeedDetail, FeedListResponse, FontSize, Member, UploadedImage, User } from './types';
 
 export class ApiError extends Error {
   constructor(
@@ -36,7 +36,8 @@ export const api = {
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
   signup: (email: string, password: string, relation: string, nickname: string) =>
     request<{ ok: true }>('/auth/signup', { method: 'POST', body: json({ email, password, relation, nickname }) }),
-  updateMe: (nickname: string) => request<{ user: User }>('/auth/me', { method: 'PATCH', body: json({ nickname }) }),
+  updateMe: (changes: { nickname?: string; fontSize?: FontSize }) =>
+    request<{ user: User }>('/auth/me', { method: 'PATCH', body: json(changes) }),
 
   feeds: (before?: string) =>
     request<FeedListResponse>(`/feeds${before ? `?before=${before}` : ''}`),

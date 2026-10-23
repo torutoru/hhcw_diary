@@ -1,4 +1,6 @@
 export type Role = 'parent' | 'member';
+/** 글자 크기 설정: 작게 75% · 보통 100% · 크게 125% */
+export type FontSize = 'small' | 'normal' | 'large';
 
 export interface User {
   id: string;
@@ -8,6 +10,8 @@ export interface User {
   /** 가족관계: 권한 기준. '엄마', '아빠'만 관리자 (수정 불가) */
   relation: string;
   role: Role;
+  /** 글자 크기 설정 (내 정보에서 수정 가능, 화면 전체에 적용) */
+  fontSize: FontSize;
 }
 
 export type Member = User;

@@ -14,10 +14,10 @@
 | POST | `/auth/login` | `{ email, password, remember? }` → `{ user }` + 쿠키. 틀리면 401(남은 횟수 안내), 승인 전·제거된 계정이면 403, **잠긴 계정이면 423**(풀리는 시각 안내). `remember: true` 면 400일 쿠키, 아니면 브라우저를 닫으면 사라지는 세션 쿠키(최대 1일) |
 | POST | `/auth/logout` | 쿠키 삭제 |
 | GET | `/auth/me` 🔒 | `{ user: User }`. `remember` 로 로그인한 세션이면 쿠키 만료를 다시 400일로 늘림 |
-| PATCH | `/auth/me` 🔒 | 내 정보 수정. `{ nickname }` (1~20자) → `{ user }`. 이메일·가족관계는 바꿀 수 없음 (보내도 무시) |
+| PATCH | `/auth/me` 🔒 | 내 정보 수정. `{ nickname?, fontSize? }` 중 바꿀 것만 (호칭 1~20자, 글자 크기 `'small' \| 'normal' \| 'large'`, 둘 다 없으면 400) → `{ user }`. 이메일·가족관계는 바꿀 수 없음 (보내도 무시) |
 
 ```ts
-User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가족관계: 권한 기준 */, role: 'parent' | 'member' }
+User = { id, email, nickname /* 호칭: 화면 표시 이름 */, relation /* 가족관계: 권한 기준 */, role: 'parent' | 'member', fontSize: 'small' | 'normal' | 'large' /* 글자 크기 75%·100%·125% */ }
 ```
 
 ## 피드

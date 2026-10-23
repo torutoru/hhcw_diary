@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import type { FontSize } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { BackIcon } from '../components/Icons';
 import { NotificationSettings } from '../components/NotificationSettings';
@@ -7,16 +8,30 @@ import { Avatar, PersonName } from '../components/Person';
 
 const TOAST_MS = 3000;
 
-/** /me — 내 정보: 이메일(고정), 호칭(수정 가능), 가족관계(고정) */
+const FONT_SIZE_OPTIONS: { value: FontSize; label: string }[] = [
+  { value: 'small', label: '작게' },
+  { value: 'normal', label: '보통' },
+  { value: 'large', label: '크게' },
+];
+
+/** /me — 내 정보: 이메일(고정), 호칭(수정 가능), 가족관계(고정), 글자 크기(누르면 바로 저장) */
 export default function MyInfoPage() {
-  const { user, updateNickname } = useAuth();
+  const { user, updateNickname, updateFontSize } = useAuth();
   const [nickname, setNickname] = useState(user?.nickname ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [fontSaving, setFontSaving] = useState(false);
+  const [fontError, setFontError] = useState('');
   const [toast, setToast] = useState('');
   const toastTimer = useRef<number>();
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+
+  function showToast(message: string) {
+    setToast(message);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(''), TOAST_MS);
+  }
 
   if (!user) return null;
 
@@ -32,13 +47,25 @@ export default function MyInfoPage() {
     try {
       await updateNickname(trimmed);
       setNickname(trimmed);
-      setToast('호칭을 바꿨어요');
-      window.clearTimeout(toastTimer.current);
-      toastTimer.current = window.setTimeout(() => setToast(''), TOAST_MS);
+      showToast('호칭을 바꿨어요');
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPickFontSize(fontSize: FontSize) {
+    if (!user || fontSize === user.fontSize || fontSaving) return;
+    setFontSaving(true);
+    setFontError('');
+    try {
+      await updateFontSize(fontSize);
+      showToast(`글자 크기를 ‘${FONT_SIZE_OPTIONS.find((o) => o.value === fontSize)!.label}’로 바꿨어요`);
+    } catch (err) {
+      setFontError((err as Error).message);
+    } finally {
+      setFontSaving(false);
     }
   }
 
@@ -92,6 +119,32 @@ export default function MyInfoPage() {
               권한을 정하는 정보라 바꿀 수 없어요.
               {user.role === 'parent' ? ' 엄마·아빠는 피드 작성과 구성원 관리를 할 수 있어요.' : ''}
             </span>
+          </div>
+
+          <div className="field">
+            <span className="field-label" id="me-font-size">
+              글자 크기
+            </span>
+            <div className="font-size-options" role="radiogroup" aria-labelledby="me-font-size">
+              {FONT_SIZE_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={user.fontSize === o.value}
+                  className="font-size-option"
+                  disabled={fontSaving}
+                  onClick={() => onPickFontSize(o.value)}
+                >
+                  <span className={`font-size-sample is-${o.value}`} aria-hidden="true">
+                    가
+                  </span>
+                  <span className="font-size-name">{o.label}</span>
+                </button>
+              ))}
+            </div>
+            <span className="hint">누르면 바로 앱 전체 글자 크기가 바뀌어요. 다른 기기에서도 같은 크기로 보여요.</span>
+            {fontError && <span className="error-text">{fontError}</span>}
           </div>
 
           <NotificationSettings />

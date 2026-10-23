@@ -51,7 +51,7 @@ export default function SignupPage() {
           <div className="result-icon" style={{ width: 84, height: 84 }}>
             <MailIcon />
           </div>
-          <h1 className="display" style={{ fontSize: 26 }}>가입 요청을 보냈어요</h1>
+          <h1 className="display" style={{ fontSize: 'calc(26px * var(--font-scale))' }}>가입 요청을 보냈어요</h1>
           <p>
             관리자에게 승인 메일이 전송됐어요.
             {'\n'}승인 링크는 1시간 동안만 유효해요.

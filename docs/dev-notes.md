@@ -122,6 +122,16 @@
   - 팝오버는 스크롤 영역에 잘리지 않게 화면 좌표(`position: fixed`)로 띄우고, 위에 공간이 없으면 버튼 아래에 붙습니다. 바깥 누르기·Esc·스크롤·화면 크기 변경 시 닫힙니다(상세 모달 위에서 Esc는 메뉴만 닫음).
 - 내 댓글: ⋯ → "수정하기" / "제거하기"(빨간색) → 제거는 확인 시트. 수정은 **맨 아래 댓글 입력칸**에 원래 내용을 채우고 위에 "댓글 수정 중 · 취소" 줄을 띄워, 보내기(✓)로 저장합니다(메신저 방식). 고친 댓글은 시간 옆 "· 수정됨".
 
+### 스크롤 잠금과 화면 확대
+- 피드 상세 모달이 떠 있는 동안 뒤 페이지는 [lib/scrollLock.ts](../frontend/src/lib/scrollLock.ts)로 **body 를 position: fixed 로 고정**했다가 닫을 때 보던 위치로 되돌립니다. `overflow: hidden`만으로는 아이폰에서 모달을 끌 때 뒤 목록까지 움직였습니다(사용자 제보). 모달·댓글 영역에는 `overscroll-behavior: contain`.
+- **앱 화면 확대는 막고 사진 크게 보기에서만 확대**(사용자 결정): `html, body { touch-action: pan-x pan-y }`, viewport `maximum-scale=1, user-scalable=no`, `gesturestart` 차단(main.tsx). 라이트박스 확대는 라이브러리가 터치 이벤트로 직접 처리해서 영향 없음. 덤으로 아이폰에서 입력칸을 누를 때 저절로 확대되던 현상도 사라짐.
+  - 그 대안으로 아래 "글자 크기" 설정을 만들었습니다(아이폰 홈 화면 앱은 시스템 글자 크기가 웹 화면에 반영되지 않음).
+
+### 글자 크기 설정
+- 내 정보 > 글자 크기: **작게 75% · 보통 100% · 크게 125%**. 버튼마다 "가"를 실제 크기(22px 기준 16.5/22/27.5px, 현재 설정과 무관하게 고정)로 보여 줍니다. 누르면 바로 적용·저장(`PATCH /api/auth/me { fontSize }`, `users.font_size`), 실패하면 원래 크기로 되돌림.
+- 구현: CSS의 모든 `font-size`가 `calc(Npx * var(--font-scale))`이고, [lib/fontSize.ts](../frontend/src/lib/fontSize.ts)가 `<html>`의 `--font-scale`만 바꿉니다. **글자만** 바뀌고 버튼·입력칸·사진 크기는 그대로(화면 전체 배율 확대는 폭이 넘쳐 가로 스크롤이 생김). **새 스타일을 쓸 때 font-size 는 반드시 이 형식으로.**
+- 이 기기 localStorage(`hhcw_font_size`)에도 기억해 두고 main.tsx 에서 먼저 적용 → 서버 응답 전 첫 화면·로그인 화면도 같은 크기. 로그인하면 계정 설정으로 덮어씀.
+
 ### 사진 크게 보기 (라이트박스)
 - 사진 넘기기는 가로 스크롤(`scroll-snap`), 확대는 `react-zoom-pan-pinch`([Lightbox.tsx](../frontend/src/components/Lightbox.tsx)). 핀치·두 번 탭(약 2.5배)·PC 휠, 최대 4배.
 - **확대 중에는 가로 스크롤을 끕니다**(`.lightbox-track.is-zoomed`). 예전에는 브라우저의 페이지 확대만 있어서, 확대 후 좌우로 끌면 가로 스크롤이 움직임을 가져가 사진이 넘어갔습니다(사용자 제보).
