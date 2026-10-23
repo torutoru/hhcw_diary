@@ -545,22 +545,34 @@ textarea {
 .ptr-icon {
   display: flex;
 }
-/* 새로고침 중: 화면 전체를 덮는 짙은 회색 + 가운데 가족 문구(LoadingQuotes) + 작은 진행 표시.
-   덮는 동안 화면 누르기를 막는다. 어두운 바탕이라 문구·진행 표시를 밝은 색으로 바꾼다 */
+/* 새로고침 중: 화면 전체를 덮는 투명한 옅은 회색 + 가운데 진행 표시. 덮는 동안 화면 누르기를 막는다.
+   1초가 넘으면(.is-slow) 짙은 회색으로 바뀌고 가족 문구(LoadingQuotes) + 작은 진행 표시를 밝은 색으로 보여준다 */
 .refresh-overlay {
   position: fixed;
   inset: 0;
   z-index: 45;
-  background: rgba(28, 32, 30, 0.9);
+  background: rgba(60, 66, 62, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: overlay-in 0.2s ease-out;
+  animation: overlay-in 0.15s ease-out;
+  transition: background-color 0.4s ease;
+}
+.refresh-overlay.is-slow {
+  background: rgba(28, 32, 30, 0.9);
 }
 @keyframes overlay-in {
   from {
     opacity: 0;
   }
+}
+.refresh-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.6);
+  border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite;
 }
 .refresh-overlay .loading-screen {
   min-height: 0;
@@ -583,6 +595,10 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .refresh-overlay {
     animation: none;
+    transition: none;
+  }
+  .refresh-spinner {
+    animation-duration: 2.4s;
   }
 }
 /* 피드 화면에서 브라우저 기본 "당겨서 페이지 새로고침"과 겹치지 않게 */

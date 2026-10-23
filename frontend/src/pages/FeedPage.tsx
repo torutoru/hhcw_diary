@@ -12,6 +12,8 @@ import { APP_NAME } from '../lib/app';
 import { PULL_THRESHOLD, usePullToRefresh } from '../lib/usePullToRefresh';
 import ProfileMenu from '../components/ProfileMenu';
 
+const SLOW_REFRESH_MS = 1000;
+
 export interface FeedOutletContext {
   onCommentAdded: (feedId: string, comment: CommentPreview) => void;
   onCommentDeleted: (feedId: string, commentId: string) => void;
@@ -56,6 +58,17 @@ export default function FeedPage() {
   const detailOpen = useMatch('/feeds/:id') !== null;
   const refresh = useCallback(() => load(), [load]);
   const { pull, dragging, refreshing } = usePullToRefresh(refresh, !detailOpen);
+
+  // 새로고침은 보통 1초 안에 끝난다. 넘어가면 서버(Render 무료 플랜)가 잠에서 깨는 중으로 보고 가족 문구를 띄운다
+  const [slowRefresh, setSlowRefresh] = useState(false);
+  useEffect(() => {
+    if (!refreshing) {
+      setSlowRefresh(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setSlowRefresh(true), SLOW_REFRESH_MS);
+    return () => window.clearTimeout(timer);
+  }, [refreshing]);
 
   // 목록 끝에 닿기 전(아래로 화면 한두 장 남았을 때) 다음 10개를 미리 불러온다
   useEffect(() => {
@@ -140,10 +153,20 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* 놓은 뒤 새로고침 중: 화면 전체를 짙은 회색이 덮고, 첫 로딩과 같은 가족 문구 + 작은 진행 표시. 끝나면 사라짐 */}
+      {/* 놓은 뒤 새로고침 중: 옅은 회색 덮개 + 가운데 진행 표시. 1초가 넘으면 서버를 깨우는 중으로 보고
+          짙은 회색으로 바뀌며 첫 로딩과 같은 가족 문구 + 작은 진행 표시. 끝나면 사라짐 */}
       {refreshing && (
-        <div className="refresh-overlay">
-          <LoadingQuotes immediate />
+        <div className={`refresh-overlay${slowRefresh ? ' is-slow' : ''}`}>
+          {slowRefresh ? (
+            <LoadingQuotes immediate />
+          ) : (
+            <>
+              <span className="refresh-spinner" aria-hidden="true" />
+              <span className="sr-only" role="status">
+                새로고침 중
+              </span>
+            </>
+          )}
         </div>
       )}
 
