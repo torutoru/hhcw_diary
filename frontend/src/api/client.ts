@@ -4,33 +4,54 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** 우리 서버가 실제로 답했는지. false 면 네트워크 끊김·시간 초과·프록시 오류 등 (서버가 깨는 중일 수 있음) */
+    public reached = true,
   ) {
     super(message);
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+/** timeoutMs: 이 시간 안에 응답이 없으면 끊고 ApiError(0) (없으면 브라우저 기본) */
+async function request<T>(path: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
+  const { timeoutMs, ...fetchInit } = init;
+  const headers = new Headers(fetchInit.headers);
+  if (fetchInit.body && !(fetchInit.body instanceof FormData)) headers.set('Content-Type', 'application/json');
 
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : undefined;
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { ...init, headers, credentials: 'same-origin' });
+    res = await fetch(`/api${path}`, {
+      ...fetchInit,
+      headers,
+      credentials: 'same-origin',
+      signal: controller?.signal,
+    });
   } catch {
-    throw new ApiError(0, '네트워크에 연결할 수 없어요.');
+    throw new ApiError(
+      0,
+      controller?.signal.aborted ? '서버 응답이 너무 늦어요.' : '네트워크에 연결할 수 없어요.',
+      false,
+    );
+  } finally {
+    window.clearTimeout(timer);
   }
-  const data = res.headers.get('content-type')?.includes('application/json') ? await res.json() : null;
-  if (!res.ok) {
-    // JSON 이 아니면 백엔드까지 가지 못한 것 (프록시 주소 오류, 서버 기동 중 등). 원인 파악용으로 상태 코드를 붙인다
-    throw new ApiError(res.status, data?.error ?? `서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요. (${res.status})`);
+  const isJson = res.headers.get('content-type')?.includes('application/json');
+  // 우리 서버는 항상 JSON 으로 답한다. JSON 이 아니면 서버까지 가지 못한 것
+  // (Netlify 프록시 오류, 잠든 Render 가 깨는 동안 보여주는 로딩 페이지 등) → reached: false
+  if (!isJson) {
+    throw new ApiError(res.status, `서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요. (${res.status})`, false);
   }
+  const data = await res.json();
+  if (!res.ok) throw new ApiError(res.status, data?.error ?? `요청을 처리하지 못했어요. (${res.status})`);
   return data as T;
 }
 
 const json = (body: unknown) => JSON.stringify(body);
 
 export const api = {
-  me: () => request<{ user: User }>('/auth/me'),
+  // 앱을 열 때 로그인 확인. 잠든 서버(Render)가 깨는 데 1분쯤 걸려서 기다릴 시간을 정해 부른다 (AuthContext)
+  me: (timeoutMs?: number) => request<{ user: User }>('/auth/me', { timeoutMs }),
   login: (email: string, password: string, remember: boolean) =>
     request<{ user: User }>('/auth/login', { method: 'POST', body: json({ email, password, remember }) }),
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),

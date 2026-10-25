@@ -5,6 +5,11 @@ const TARGET_MAX_BYTES = 400 * 1024;
 const EDGE_STEPS = [2048, 1600, 1280, 1024];
 const QUALITY_MIN = 50;
 const QUALITY_MAX = 88;
+// 품질은 4단위로 찾는다 (1단위는 눈으로 구분되지 않고 인코딩 횟수만 늘어난다)
+const QUALITY_STEP = 4;
+// WebP 압축 노력(0~6). 2는 4보다 약 30% 빠르고 같은 화질에서 파일이 2%쯤 커진다.
+// Render 무료(0.1 CPU)에서 변환이 Netlify 프록시 제한(26초)을 넘지 않게 낮췄다 (2026-10-26, 고해상도 아이폰 사진 업로드 실패)
+const EFFORT = 2;
 
 export interface ProcessedImage {
   data: Buffer;
@@ -32,34 +37,39 @@ export async function toWebp(input: Buffer): Promise<ProcessedImage> {
 
     const encode = (quality: number) =>
       sharp(raw, { raw: { width: info.width, height: info.height, channels: info.channels } })
-        .webp({ quality, effort: 4 })
+        .webp({ quality, effort: EFFORT })
         .toBuffer();
+    const result = (data: Buffer): ProcessedImage => ({
+      data,
+      width: info.width,
+      height: info.height,
+      bytes: data.length,
+    });
 
+    // 대부분의 사진은 최고 품질 한 번으로 끝난다
     const top = await encode(QUALITY_MAX);
-    if (top.length <= TARGET_MAX_BYTES) {
-      return { data: top, width: info.width, height: info.height, bytes: top.length };
-    }
+    if (top.length <= TARGET_MAX_BYTES) return result(top);
 
-    // 400KB 이하가 되는 가장 높은 품질을 이진 탐색
-    let lo = QUALITY_MIN;
-    let hi = QUALITY_MAX - 1;
-    let best: Buffer | null = null;
+    // 최저 품질로도 넘으면 이 크기에서는 찾을 필요 없이 바로 다음 크기로
+    const min = await encode(QUALITY_MIN);
+    last = result(min);
+    if (min.length > TARGET_MAX_BYTES) continue;
+
+    // 400KB 이하가 되는 가장 높은 품질을 4단위로 이진 탐색 (QUALITY_MIN 은 이미 통과)
+    let lo = QUALITY_MIN + QUALITY_STEP;
+    let hi = QUALITY_MAX - QUALITY_STEP;
+    let best = min;
     while (lo <= hi) {
-      const mid = Math.floor((lo + hi) / 2);
+      const mid = lo + Math.floor((hi - lo) / QUALITY_STEP / 2) * QUALITY_STEP;
       const buf = await encode(mid);
       if (buf.length <= TARGET_MAX_BYTES) {
         best = buf;
-        lo = mid + 1;
+        lo = mid + QUALITY_STEP;
       } else {
-        hi = mid - 1;
+        hi = mid - QUALITY_STEP;
       }
     }
-    if (best) {
-      return { data: best, width: info.width, height: info.height, bytes: best.length };
-    }
-
-    const fallback = await encode(QUALITY_MIN);
-    last = { data: fallback, width: info.width, height: info.height, bytes: fallback.length };
+    return result(best);
   }
 
   // 모든 단계에서 400KB를 넘으면 가장 작은 결과를 사용
@@ -76,7 +86,7 @@ export async function toThumb(input: Buffer): Promise<ProcessedImage> {
   const { data, info } = await sharp(input, { failOn: 'none' })
     .rotate()
     .resize({ width: THUMB_EDGE, height: THUMB_EDGE, fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: THUMB_QUALITY, effort: 4 })
+    .webp({ quality: THUMB_QUALITY, effort: EFFORT })
     .toBuffer({ resolveWithObject: true });
   return { data, width: info.width, height: info.height, bytes: data.length };
 }

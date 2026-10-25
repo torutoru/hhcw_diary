@@ -1,12 +1,12 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../db/client.js';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { nowISO } from '../lib/time.js';
 import { requireUser, toSessionUser } from '../plugins/auth.js';
 
 // 가족 구성원 관리는 관리자('엄마', '아빠')만
-async function requireAdmin(req: FastifyRequest) {
-  await requireUser(req);
+async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
+  await requireUser(req, reply);
   if (req.currentUser!.role !== 'parent') throw forbidden('가족 구성원 관리는 엄마, 아빠만 할 수 있어요.');
 }
 

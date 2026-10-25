@@ -238,11 +238,8 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // 앱을 열 때마다 호출된다. 기억하기로 로그인했다면 만료를 다시 400일로 늘린다
-  app.get('/api/auth/me', { preHandler: requireUser }, async (req, reply) => {
-    if (req.user.rmb) setSession(reply, req.currentUser!.id, config.isProd, true);
-    return { user: req.currentUser };
-  });
+  // 앱을 열 때마다 호출된다. 기억하기 세션의 30일 연장은 requireUser 가 모든 로그인 요청에서 한다
+  app.get('/api/auth/me', { preHandler: requireUser }, async (req) => ({ user: req.currentUser }));
 
   // 내 정보 수정: 호칭과 글자 크기만 바꿀 수 있다 (이메일, 가족관계는 고정)
   app.patch('/api/auth/me', { preHandler: requireUser }, async (req) => {

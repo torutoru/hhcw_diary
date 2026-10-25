@@ -1,8 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { FontSize, User } from '../api/types';
 import { applyFontSize } from '../lib/fontSize';
 import { disablePush, resyncPush } from '../lib/notifications';
+
+// 앱을 열 때 로그인 확인: 한 번에 1분씩 최대 2번(총 2분) 기다린다. 잠든 Render 가 깨는 데 1분쯤 걸린다
+const ME_TIMEOUT_MS = 60_000;
+const ME_ATTEMPTS = 2;
+// 서버까지 못 간 빠른 실패(프록시 오류·로딩 페이지·네트워크 끊김)는 이 간격으로 다시 묻는다 (기다리는 시간 안에서)
+const NOT_REACHED_RETRY_MS = 3000;
 
 interface AuthState {
   user: User | null;
@@ -19,15 +25,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 앱을 열 때 로그인 확인 (가족 문구 화면을 띄운 채):
+  // - 정상 응답 → 피드 / 서버의 실제 오류 응답(401·403·500 등) → 로그인 화면
+  // - 1분 안에 서버가 답하지 않으면(시간 초과, 프록시 오류·로딩 페이지·네트워크 끊김) 1분 더 기다리고,
+  //   총 2분 동안 답이 없으면 로그인 화면
   useEffect(() => {
-    api
-      .me()
-      .then((res) => {
-        setUser(res.user);
-        resyncPush();
-      })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    let alive = true;
+    let timer: number | undefined;
+    const deadline = Date.now() + ME_TIMEOUT_MS * ME_ATTEMPTS;
+    const finish = (u: User | null) => {
+      setUser(u);
+      setLoading(false);
+      if (u) resyncPush();
+    };
+
+    const check = () => {
+      const startedAt = Date.now();
+      const wait = Math.min(ME_TIMEOUT_MS, deadline - startedAt);
+      api
+        .me(wait)
+        .then((res) => alive && finish(res.user))
+        .catch((err) => {
+          if (!alive) return;
+          const notReached = err instanceof ApiError && !err.reached;
+          const left = deadline - Date.now();
+          if (!notReached || left <= 0) return finish(null);
+          // 1분을 다 기다린 시간 초과면 바로 다음 1분, 빨리 돌아온 실패면 잠깐 쉬고 다시
+          const timedOut = Date.now() - startedAt >= wait;
+          timer = window.setTimeout(check, timedOut ? 0 : Math.min(NOT_REACHED_RETRY_MS, left));
+        });
+    };
+    check();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
