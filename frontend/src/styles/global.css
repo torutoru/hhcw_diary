@@ -1715,18 +1715,95 @@ button.fab {
 .thumb img {
   border-radius: 12px;
 }
-/* 길게 누르면 대표 사진 메뉴: 휴대폰 기본 메뉴(이미지 저장)·글자 선택이 뜨지 않게 */
-.thumb {
+/* ---------- 작성 화면 사진 정리 (ComposePhotos): 길게 누른 채 끌어서 순서·대표 사진 바꾸기 ---------- */
+.compose-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* 길게 누를 때 휴대폰 기본 메뉴(이미지 저장)·글자 선택이 뜨지 않게 */
+.thumb,
+.cover-preview {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  touch-action: manipulation;
 }
-.thumb img {
+.thumb img,
+.cover-preview img {
   pointer-events: none;
 }
-.thumb.is-pressed {
-  outline: 2.5px solid var(--primary);
+.photo-wiggle {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+/* 정리 모드: 모든 사진이 살짝 흔들린다 (아이폰 홈 화면 편집처럼). 칸마다 시작 시점을 어긋나게 */
+.compose-photos.is-arranging .photo-wiggle {
+  animation: photo-wiggle 0.28s ease-in-out infinite alternate;
+}
+.compose-photos.is-arranging .cover-preview .photo-wiggle {
+  animation-name: photo-wiggle-small;
+}
+@keyframes photo-wiggle {
+  from {
+    transform: rotate(-2deg);
+  }
+  to {
+    transform: rotate(2deg);
+  }
+}
+/* 대표 사진은 넓어서 같은 각도면 너무 크게 흔들려 보인다 */
+@keyframes photo-wiggle-small {
+  from {
+    transform: rotate(-0.6deg);
+  }
+  to {
+    transform: rotate(0.6deg);
+  }
+}
+/* 끌고 있는 사진의 원래 자리 */
+.thumb.is-placeholder,
+.cover-preview.is-placeholder {
+  opacity: 0.35;
+}
+.compose-photos.is-arranging .is-placeholder .photo-wiggle {
+  animation: none;
+}
+/* 대표 사진 ↔ 추가 사진 맞바꿀 자리 */
+.is-swap-target {
+  outline: 3px solid var(--primary);
   outline-offset: 2px;
+}
+.cover-pick.is-swap-target {
+  background: var(--primary-soft);
+}
+/* 손가락을 따라 떠서 움직이는 사진 */
+.photo-lifted {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  transform: scale(1.06);
+  box-shadow: 0 12px 28px rgba(12, 16, 13, 0.32);
+  cursor: grabbing;
+}
+.photo-lifted.is-cover {
+  border-radius: 16px;
+  transform: scale(1.02);
+}
+.photo-lifted img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (prefers-reduced-motion: reduce) {
+  .compose-photos.is-arranging .photo-wiggle {
+    animation: none;
+  }
 }
 .thumb-remove {
   position: absolute;

@@ -1,23 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
-import { CloseIcon, PhotoIcon, PlusIcon } from '../components/Icons';
-import PopoverMenu from '../components/PopoverMenu';
+import ComposePhotos, { MAX_EXTRA, type PhotoSlot as Slot } from '../components/ComposePhotos';
 import { formatComposeDate } from '../lib/format';
 import { preShrink } from '../lib/imageResize';
-import { useLongPress } from '../lib/useLongPress';
-
-const MAX_EXTRA = 5;
-
-interface Slot {
-  key: string;
-  preview: string;
-  imageId?: string;
-  status: 'uploading' | 'done' | 'error';
-  error?: string;
-  /** 이 화면에서 새로 올린 사진. 빼면 서버에서 바로 지운다 (저장된 피드의 기존 사진은 저장할 때 정리) */
-  fresh?: boolean;
-}
 
 let seq = 0;
 const nextKey = () => `slot-${++seq}`;
@@ -42,10 +28,6 @@ export default function ComposePage() {
   const objectUrls = useRef<string[]>([]);
   // 업로드가 끝나기 전에 뺀 사진. 업로드가 끝나는 즉시 지운다
   const discarded = useRef(new Set<string>());
-  // 추가 사진을 길게 누르면 사진 위에 뜨는 메뉴 → "대표 사진으로 적용하기"
-  const longPress = useLongPress();
-  const [menuFor, setMenuFor] = useState<{ key: string; anchor: HTMLElement } | null>(null);
-  const closeMenu = useCallback(() => setMenuFor(null), []);
 
   useEffect(() => {
     api
@@ -103,10 +85,10 @@ export default function ComposePage() {
   }
 
   /**
-   * 추가 사진을 대표 사진으로: 두 사진의 자리를 맞바꾼다 (원래 대표 사진은 그 추가 사진 자리로).
-   * 메뉴가 떠 있는 사이 업로드가 끝나거나 사진이 빠졌을 수 있어, 지금 상태에서 key 로 다시 찾는다
+   * 추가 사진과 대표 사진 맞바꾸기 (원래 대표 사진은 그 추가 사진 자리로, 나머지 순서는 그대로).
+   * 대표 사진이 없으면 그 사진이 대표가 된다
    */
-  function makeCover(key: string) {
+  function swapCover(key: string) {
     const slot = extras.find((s) => s.key === key);
     if (!slot) return;
     setExtras((list) => (cover ? list.map((s) => (s.key === key ? cover : s)) : list.filter((s) => s.key !== key)));
@@ -198,93 +180,20 @@ export default function ComposePage() {
           <span className="hint">· 하루 한 번</span>
         </div>
 
-        <div className="compose-section">
-          <span className="compose-label">
-            대표 사진 <span className="req">*</span>
-          </span>
-          {cover ? (
-            <div className="cover-preview">
-              <img src={cover.preview} alt="대표 사진" decoding="async" />
-              <SlotState slot={cover} />
-              <button type="button" className="chip-btn" onClick={() => coverInput.current?.click()}>
-                사진 바꾸기
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="cover-pick" onClick={() => coverInput.current?.click()}>
-              <PhotoIcon size={36} strokeWidth={1.6} />
-              대표 사진 고르기
-            </button>
-          )}
-          <input ref={coverInput} type="file" accept="image/*" hidden onChange={onPickCover} />
-        </div>
-
-        <div className="compose-section">
-          <div className="compose-label-row">
-            <span className="compose-label">사진 더하기</span>
-            <span className="hint">
-              {extras.length} / {MAX_EXTRA}
-            </span>
-          </div>
-          <div className="thumbs">
-            {extras.map((s, i) => (
-              <div
-                key={s.key}
-                className={`thumb${menuFor?.key === s.key ? ' is-pressed' : ''}`}
-                {...longPress((anchor) => setMenuFor({ key: s.key, anchor }))}
-              >
-                <img src={s.preview} alt={`추가 사진 ${i + 1}`} decoding="async" />
-                <SlotState slot={s} />
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  aria-label="사진 빼기"
-                  // X 를 꾹 눌러도 사진의 길게 누르기(대표 사진 메뉴)가 시작되지 않게
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onContextMenu={(e) => e.stopPropagation()}
-                  onClick={() => {
-                    if (menuFor?.key === s.key) setMenuFor(null);
-                    discard(s);
-                    setExtras((list) => list.filter((x) => x.key !== s.key));
-                  }}
-                >
-                  <CloseIcon size={12} strokeWidth={3} />
-                </button>
-              </div>
-            ))}
-            {Array.from({ length: MAX_EXTRA - extras.length }, (_, i) => (
-              <button
-                key={`empty-${i}`}
-                type="button"
-                className="thumb-add"
-                aria-label="사진 추가"
-                onClick={() => extraInput.current?.click()}
-              >
-                <PlusIcon size={20} strokeWidth={2} />
-              </button>
-            ))}
-          </div>
-          <input ref={extraInput} type="file" accept="image/*" multiple hidden onChange={onPickExtras} />
-          {extras.length > 0 && <span className="hint">사진을 길게 누르면 대표 사진으로 바꿀 수 있어요.</span>}
-        </div>
-
-        {menuFor && (
-          <PopoverMenu
-            anchor={menuFor.anchor}
-            label="사진 메뉴"
-            onClose={closeMenu}
-            items={[
-              {
-                label: '대표 사진으로 적용하기',
-                icon: <PhotoIcon size={18} strokeWidth={2} />,
-                onSelect: () => {
-                  makeCover(menuFor.key);
-                  setMenuFor(null);
-                },
-              },
-            ]}
-          />
-        )}
+        <ComposePhotos
+          cover={cover}
+          extras={extras}
+          onExtrasChange={setExtras}
+          onSwapCover={swapCover}
+          onRemoveExtra={(slot) => {
+            discard(slot);
+            setExtras((list) => list.filter((x) => x.key !== slot.key));
+          }}
+          onPickCover={() => coverInput.current?.click()}
+          onAddExtra={() => extraInput.current?.click()}
+        />
+        <input ref={coverInput} type="file" accept="image/*" hidden onChange={onPickCover} />
+        <input ref={extraInput} type="file" accept="image/*" multiple hidden onChange={onPickExtras} />
 
         <div className="compose-section">
           <label htmlFor="compose-text" className="compose-label">
@@ -309,15 +218,4 @@ export default function ComposePage() {
       </main>
     </>
   );
-}
-
-function SlotState({ slot }: { slot: Slot }) {
-  if (slot.status === 'uploading') return <span className="upload-state">올리는 중</span>;
-  if (slot.status === 'error')
-    return (
-      <span className="upload-state is-error" title={slot.error}>
-        실패
-      </span>
-    );
-  return null;
 }
