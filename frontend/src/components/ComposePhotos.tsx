@@ -163,7 +163,7 @@ export default function ComposePhotos({
       <DragOverlay>
         {activeSlot && (
           <div className={`photo-lifted${coverIsActive ? ' is-cover' : ''}`}>
-            <img src={activeSlot.preview} alt="" />
+            <PhotoImage src={activeSlot.preview} />
           </div>
         )}
       </DragOverlay>
@@ -220,7 +220,7 @@ function CoverSlot({
       aria-label="대표 사진. 끌어서 다른 사진과 바꾸기"
     >
       <Wiggle index={0}>
-        <img src={cover.preview} alt="대표 사진" decoding="async" />
+        <PhotoImage src={cover.preview} label="대표 사진" />
         <SlotState slot={cover} />
       </Wiggle>
       {!dragging && (
@@ -258,7 +258,7 @@ function ExtraSlot({
       aria-label={`추가 사진 ${index + 1}. 끌어서 순서 바꾸기`}
     >
       <Wiggle index={index + 1}>
-        <img src={slot.preview} alt={`추가 사진 ${index + 1}`} decoding="async" />
+        <PhotoImage src={slot.preview} label={`추가 사진 ${index + 1}`} />
         <SlotState slot={slot} />
       </Wiggle>
       {!dragging && (
@@ -276,6 +276,22 @@ const stopDrag = {
   onMouseDown: (e: { stopPropagation: () => void }) => e.stopPropagation(),
   onKeyDown: (e: { stopPropagation: () => void }) => e.stopPropagation(),
 };
+
+/**
+ * 사진을 <img> 대신 배경 이미지로 그린다. 아이폰 사파리는 <img> 를 길게 누르면 자체 사진 메뉴(저장·공유)를 띄우고
+ * 사진을 시스템 드래그로 집어 올려서, 우리 드래그가 시작되지 않았다(사용자 제보). 배경 이미지는 둘 다 생기지 않는다
+ */
+function PhotoImage({ src, label }: { src: string; label?: string }) {
+  return (
+    <div
+      className="photo-image"
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      style={{ backgroundImage: `url("${src.replace(/"/g, '%22')}")` }}
+    />
+  );
+}
 
 /** 흔들리는 안쪽 틀(정리 모드 표시). 칸 자체는 드래그 위치(transform)를 쓰므로 흔들림은 안쪽에 준다 */
 function Wiggle({ index, children }: { index: number; children: ReactNode }) {

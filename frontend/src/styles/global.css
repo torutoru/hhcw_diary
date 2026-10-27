@@ -1681,13 +1681,6 @@ button.fab {
   position: relative;
   overflow: hidden;
 }
-.cover-preview img,
-.thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 .chip-btn {
   position: absolute;
   right: 10px;
@@ -1712,26 +1705,30 @@ button.fab {
   background: var(--placeholder);
   position: relative;
 }
-.thumb img {
-  border-radius: 12px;
-}
-/* ---------- 작성 화면 사진 정리 (ComposePhotos): 길게 누른 채 끌어서 순서·대표 사진 바꾸기 ---------- */
+/* ---------- 작성 화면 사진 정리 (ComposePhotos): 끌어서 순서·대표 사진 바꾸기 ---------- */
 .compose-photos {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-/* 길게 누를 때 휴대폰 기본 메뉴(이미지 저장)·글자 선택이 뜨지 않게 */
-.thumb,
-.cover-preview {
+/* 누르고 있을 때 휴대폰 기본 메뉴·글자 선택이 뜨지 않게. 사진은 <img> 가 아닌 배경 이미지(.photo-image)라
+   아이폰의 사진 메뉴(저장·공유)와 시스템 사진 드래그도 생기지 않는다 */
+.compose-photos,
+.compose-photos * {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+.thumb,
+.cover-preview {
   touch-action: manipulation;
 }
-.thumb img,
-.cover-preview img {
-  pointer-events: none;
+.photo-image {
+  width: 100%;
+  height: 100%;
+  background-color: var(--placeholder);
+  background-size: cover;
+  background-position: center;
 }
 .photo-wiggle {
   position: relative;
@@ -1793,12 +1790,6 @@ button.fab {
 .photo-lifted.is-cover {
   border-radius: 16px;
   transform: scale(1.02);
-}
-.photo-lifted img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 @media (prefers-reduced-motion: reduce) {
   .compose-photos.is-arranging .photo-wiggle {
