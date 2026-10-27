@@ -1,7 +1,7 @@
 # 개발 노트 — 다음 작업 전에 읽기
 
 지금까지 만든 것, 정한 규칙, 작업하면서 겪은 함정과 남은 일을 정리했습니다. **2026-10-26 기준, 마지막 기능 커밋은 `a37d7c3`**입니다.
-자세한 내용은 [architecture.md](architecture.md)(구조·DB), [api.md](api.md)(API), [deployment.md](deployment.md)(설정·배포), [pwa.md](pwa.md)(홈 화면 앱·푸시 알림), [design/README.md](design/README.md)(디자인 대응)에 있습니다.
+새 Claude 세션은 루트의 [CLAUDE.md](../CLAUDE.md)(일하는 방식·꼭 지킬 규칙 요약)부터 읽습니다. 자세한 내용은 [architecture.md](architecture.md)(구조·DB), [api.md](api.md)(API), [deployment.md](deployment.md)(설정·배포), [pwa.md](pwa.md)(홈 화면 앱·푸시 알림), [design/README.md](design/README.md)(디자인 대응)에 있습니다.
 
 ## 1. 한눈에 보기
 
@@ -168,7 +168,10 @@
 
 ## 4. 작업 방식 (사용자와 합의한 것)
 
+- **대화는 모두 한국어**(도구 호출 사이 진행 안내 포함).
 - **Git**: 혼자 쓰는 저장소이므로 브랜치를 만들지 말고 **`main`에 바로 커밋·푸시**합니다. 커밋·푸시는 사용자가 요청할 때만 합니다.
+  - "커밋해줘"는 커밋만(푸시 안 함), "반영해줘·배포해줘"는 커밋 + 푸시(자동 배포)입니다.
+  - 사용자가 실행 중에 멈추면 실제로 어디까지 됐는지(`git log`, `git status`) 확인해서 알립니다.
   - 사용자가 GitHub에서 직접 병합하는 경우가 있으니, 푸시 전에 `git fetch` 후 뒤처졌으면 `rebase`합니다.
 - 사용자는 기능을 받으면 **로컬에서 직접 확인한 뒤** "반영해줘", "배포해줘"라고 요청합니다. 확인 전에는 커밋하지 않습니다.
 - 디자인 변경은 사용자가 아티팩트에 먼저 그리고 "보고 알려줘"라고 요청합니다. 아티팩트를 읽고 차이를 설명한 뒤 구현하고, 바뀐 시안은 `docs/design/artboards/`에 복사합니다.
@@ -194,7 +197,8 @@
 ### 배포
 - Render는 `NODE_ENV=production`이면 devDependencies를 빼고 설치하므로, 빌드 명령은 `npm ci --include=dev && npm run build`입니다([render.yaml](../render.yaml)).
 - Render 무료 플랜은 SMTP가 막혀 있어서 메일은 Resend HTTP API로 보냅니다.
-- Render 무료 플랜은 15분 동안 요청이 없으면 잠들고, 깨어날 때 첫 요청이 30초 이상 걸릴 수 있습니다. 매 정각 정리 작업도 잠든 동안에는 돌지 않습니다(시작 시 실행으로 보완).
+- Render 무료 플랜은 **CPU 0.1개·512MB**이고, 15분 동안 요청이 없으면 잠들며 **깨어나는 데 약 1분** 걸립니다(Render 문서). 깨는 동안 브라우저에는 Render 로딩 페이지가 나갑니다. 매 정각 정리 작업도 잠든 동안에는 돌지 않습니다(시작 시 실행으로 보완).
+- **Netlify 프록시는 26초**가 지나면 끊습니다(Netlify 문서). 서버가 깨는 동안의 요청이나 오래 걸리는 사진 변환이 이 제한에 걸립니다 → 앱 시작 로그인 확인은 "서버가 답하지 않음"을 따로 다루고(3절 로딩 화면), 사진 변환은 26초 안에 끝나도록 줄였습니다([architecture.md](architecture.md) 사진 처리).
 - 프론트 오류 문구 "서버에 연결하지 못했어요. (상태코드)"는 응답이 JSON이 아니라는 뜻입니다. 백엔드까지 가지 못한 것이니 **프록시 주소나 서버 상태부터** 봅니다.
 - Netlify 환경변수를 바꾼 뒤에는 **Trigger deploy**로 다시 빌드해야 반영됩니다. 푸시와 동시에 변수를 넣으면 이전 값으로 빌드될 수 있습니다.
 - 사이트 오른쪽 아래 Netlify 아이콘은 우리 코드가 아니라 Netlify Drawer(협업 툴바)입니다. 로그인한 관리자·미리보기 주소에서만 보이며, Netlify 설정에서 끌 수 있습니다.
@@ -220,7 +224,7 @@
 
 - `backend/.env`에는 **실제 Resend 키**와 **로컬 전용 VAPID 키**가 들어 있습니다. 로컬 4000번 서버로 가입 요청을 보내면 진짜 메일이 나갑니다.
 - 로컬 화면에서 서비스 이름을 바꿔 보려면 `frontend/.env`에 `VITE_APP_NAME=...`을 넣고 개발 서버를 다시 켭니다([frontend/.env.example](../frontend/.env.example)).
-- **메일 없는 테스트 서버** 띄우는 법:
+- **메일 없는 테스트 서버** 띄우는 법 (간단한 방법, Git Bash): `cd backend && RESEND_API_KEY= PORT=4100 npx tsx src/index.ts`. 빈 값은 "없음"으로 처리되어 메일이 로그에만 찍힙니다. 토큰을 직접 만들어 시험하려면 `JWT_SECRET=<시험용 32자 이상>`도 넘깁니다(실제 비밀 키를 읽지 않고 시험). PowerShell 에서는 빈 값이 변수를 지우므로 아래 방법을 씁니다.
   1. 임시 폴더에 `backend/.env.example`을 복사해 `.env`를 만들고 `PORT=4100`, `JWT_SECRET=<32자 이상>`, `TURSO_DATABASE_URL=file:C:/workspace/hhcw_diary/backend/local.db`로 바꿉니다. `RESEND_API_KEY`는 비워 둡니다.
   2. 그 폴더에서 `node C:\workspace\hhcw_diary\backend\node_modules\tsx\dist\cli.mjs C:\workspace\hhcw_diary\backend\src\index.ts`를 실행합니다.
   3. `http://localhost:4100/api`로 요청하면 메일 내용이 서버 로그에만 찍힙니다.
