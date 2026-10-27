@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import {
   TransformComponent,
   TransformWrapper,
@@ -15,8 +15,14 @@ interface Props {
 }
 
 const MAX_SCALE = 4;
-// 두 번 탭: 약 2.5배 확대 / 확대 중이면 원래대로
-const DOUBLE_TAP_STEP = 0.9;
+// 두 번 탭(더블클릭): 원래 크기면 탭한 곳을 중심으로 2.5배, 확대 중이면(배율과 상관없이) 원래 크기로
+const DOUBLE_TAP_SCALE = 2.5;
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_SLOP_PX = 40;
+// 한 번의 "탭": 이 시간 안에 이 거리 이하로만 움직이고 뗀 터치
+const TAP_MAX_MS = 250;
+const TAP_MAX_MOVE_PX = 10;
+const ZOOM_ANIMATION_MS = 220;
 // 확대 중 가장자리에서 더 끌어 넘기기: 손가락 이동 거리 기준
 const EDGE_SWIPE_PX = 60;
 const EDGE_EPSILON = 2;
@@ -125,6 +131,65 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
     else if (dx >= EDGE_SWIPE_PX && start.atLeftEdge) go(index - 1);
   };
 
+  // 두 번 탭은 직접 감지한다. 라이브러리의 두 번 탭은 브라우저 dblclick 이벤트에 기대는데 휴대폰(특히 아이폰)은
+  // 이를 거의 보내지 않고, 원래 크기에서는 사진 넘기기 때문에 끌기를 꺼 둬서 터치 감지도 동작하지 않았다.
+  // 또 라이브러리 toggle 은 확대 중일 때 한 단계만 줄여서 "원래대로"가 되지 않았다
+  const toggleZoom = (i: number, x: number, y: number) => {
+    const ref = zoomRefs.current[i];
+    const wrapper = ref?.instance.wrapperComponent;
+    if (!ref || !wrapper) return;
+    if (ref.instance.transformState.scale > 1.01) {
+      ref.resetTransform(ZOOM_ANIMATION_MS);
+      return;
+    }
+    // 탭한 지점이 확대 뒤에도 손가락 아래에 있도록. 사진 영역은 확대 영역을 꽉 채우므로 그 크기로 가장자리를 맞춘다
+    const rect = wrapper.getBoundingClientRect();
+    const s = DOUBLE_TAP_SCALE;
+    const clamp = (v: number, size: number) => Math.min(0, Math.max(size * (1 - s), v));
+    ref.setTransform(
+      clamp((x - rect.left) * (1 - s), rect.width),
+      clamp((y - rect.top) * (1 - s), rect.height),
+      s,
+      ZOOM_ANIMATION_MS,
+    );
+  };
+
+  const touch = useRef<{ x: number; y: number; at: number } | null>(null);
+  const lastTap = useRef<{ x: number; y: number; at: number } | null>(null);
+  // 터치로 토글한 직후 브라우저가 dblclick 을 또 보내면 두 번 토글되지 않게
+  const touchToggledAt = useRef(0);
+
+  const onSlideTouchStart = (e: ReactTouchEvent) => {
+    const t = e.touches[0];
+    touch.current = e.touches.length === 1 ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
+    if (e.touches.length > 1) lastTap.current = null; // 핀치는 탭이 아니다
+  };
+  const onSlideTouchEnd = (i: number) => (e: ReactTouchEvent) => {
+    const start = touch.current;
+    touch.current = null;
+    const t = e.changedTouches[0];
+    if (!start || !t || e.touches.length > 0) return;
+    const now = Date.now();
+    const isTap = now - start.at < TAP_MAX_MS && Math.hypot(t.clientX - start.x, t.clientY - start.y) < TAP_MAX_MOVE_PX;
+    if (!isTap) {
+      lastTap.current = null;
+      return;
+    }
+    const prev = lastTap.current;
+    if (prev && now - prev.at < DOUBLE_TAP_MS && Math.hypot(t.clientX - prev.x, t.clientY - prev.y) < DOUBLE_TAP_SLOP_PX) {
+      lastTap.current = null;
+      touchToggledAt.current = now;
+      e.preventDefault();
+      toggleZoom(i, t.clientX, t.clientY);
+    } else {
+      lastTap.current = { x: t.clientX, y: t.clientY, at: now };
+    }
+  };
+  const onSlideDoubleClick = (i: number) => (e: ReactMouseEvent) => {
+    if (Date.now() - touchToggledAt.current < 800) return;
+    toggleZoom(i, e.clientX, e.clientY);
+  };
+
   return (
     <div className="lightbox" role="dialog" aria-modal="true" aria-label="사진 크게 보기">
       <div className="lightbox-top">
@@ -139,7 +204,13 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
       {/* 확대 중에는 가로 스크롤(사진 넘기기)을 멈춰 손가락 움직임이 확대한 사진 이동에 쓰이게 한다 */}
       <div className={`lightbox-track${zoomed ? ' is-zoomed' : ''}`} ref={track} onScroll={onScroll}>
         {photos.map((p, i) => (
-          <div key={p.id} className="lightbox-slide">
+          <div
+            key={p.id}
+            className="lightbox-slide"
+            onTouchStart={onSlideTouchStart}
+            onTouchEnd={onSlideTouchEnd(i)}
+            onDoubleClick={onSlideDoubleClick(i)}
+          >
             <TransformWrapper
               ref={(r) => {
                 zoomRefs.current[i] = r;
@@ -148,7 +219,8 @@ export default function Lightbox({ photos, startIndex, onClose }: Props) {
               maxScale={MAX_SCALE}
               limitToBounds
               centerZoomedOut
-              doubleClick={{ mode: 'toggle', step: DOUBLE_TAP_STEP }}
+              // 두 번 탭·더블클릭은 직접 처리 (toggleZoom)
+              doubleClick={{ disabled: true }}
               wheel={{ step: 0.15 }}
               // 원래 크기에서는 끌기를 라이브러리가 가져가지 않게 해서 스와이프 넘기기가 동작하도록
               panning={{ disabled: !(zoomed && i === index), velocityDisabled: true }}

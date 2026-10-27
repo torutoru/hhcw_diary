@@ -37,9 +37,12 @@ export interface PhotoSlot {
 
 export const MAX_EXTRA = 5;
 const COVER_ID = 'cover';
-// 길게 누르기 0.5초 뒤 드래그 시작. 그 전에 손가락이 이만큼 넘게 움직이면 화면 스크롤로 본다
-const PRESS_DELAY_MS = 500;
-const PRESS_TOLERANCE_PX = 8;
+// 이 화면은 항상 정리 모드라 길게 누를 필요가 없다. 다만 사진 위에서 화면을 스크롤할 수 있게,
+// 터치는 잠깐(0.15초) 누른 채여야 드래그가 시작되고 그 전에 이만큼 넘게 움직이면 스크롤로 본다
+const TOUCH_DELAY_MS = 150;
+const TOUCH_TOLERANCE_PX = 5;
+// 마우스는 이만큼 끌면 바로 시작 (클릭과 구분)
+const MOUSE_DISTANCE_PX = 5;
 
 interface Props {
   cover: PhotoSlot | null;
@@ -54,7 +57,7 @@ interface Props {
 
 /**
  * 피드 작성·수정의 대표 사진 + 사진 더하기.
- * 사진을 길게 누르면 정리 모드(모든 사진이 흔들림)로 들어가 끌어서 옮긴다:
+ * 이 화면에 있는 동안은 항상 정리 모드(모든 사진이 흔들림)라 언제든 끌어서 옮긴다 (사용자 요청):
  * - 사진 더하기 안에서: 끼워 넣기 (사이 사진들이 실시간으로 한 칸씩 밀려남)
  * - 대표 사진 ↔ 사진 더하기: 두 사진만 맞바꾸기
  */
@@ -69,12 +72,13 @@ export default function ComposePhotos({
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
-    useSensor(TouchSensor, { activationConstraint: { delay: PRESS_DELAY_MS, tolerance: PRESS_TOLERANCE_PX } }),
-    useSensor(MouseSensor, { activationConstraint: { delay: PRESS_DELAY_MS, tolerance: PRESS_TOLERANCE_PX } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: TOUCH_DELAY_MS, tolerance: TOUCH_TOLERANCE_PX } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: MOUSE_DISTANCE_PX } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const arranging = activeId !== null;
+  // 끄는 중: X·"사진 바꾸기"·사진 추가 버튼을 잠시 숨기거나 막는다 (흔들림은 늘 켜져 있음)
+  const dragging = activeId !== null;
   const activeSlot = activeId === COVER_ID ? cover : (extras.find((s) => s.key === activeId) ?? null);
   const coverIsActive = activeId === COVER_ID;
 
@@ -103,15 +107,15 @@ export default function ComposePhotos({
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className={`compose-photos${arranging ? ' is-arranging' : ''}`}>
+      <div className="compose-photos is-arranging">
         <div className="compose-section">
           <span className="compose-label">
             대표 사진 <span className="req">*</span>
           </span>
           <CoverSlot
             cover={cover}
-            swapTarget={arranging && !coverIsActive}
-            arranging={arranging}
+            swapTarget={dragging && !coverIsActive}
+            dragging={dragging}
             onPick={onPickCover}
           />
         </div>
@@ -131,7 +135,7 @@ export default function ComposePhotos({
                   slot={s}
                   index={i}
                   swapTarget={coverIsActive}
-                  arranging={arranging}
+                  dragging={dragging}
                   onRemove={() => onRemoveExtra(s)}
                 />
               ))}
@@ -142,7 +146,7 @@ export default function ComposePhotos({
                   className="thumb-add"
                   aria-label="사진 추가"
                   onClick={onAddExtra}
-                  disabled={arranging}
+                  disabled={dragging}
                 >
                   <PlusIcon size={20} strokeWidth={2} />
                 </button>
@@ -150,7 +154,7 @@ export default function ComposePhotos({
             </div>
           </SortableContext>
           {(extras.length > 0 || cover) && (
-            <span className="hint">사진을 길게 누른 채 끌면 순서를 바꾸거나 대표 사진과 바꿀 수 있어요.</span>
+            <span className="hint">사진을 끌어서 순서를 바꾸거나 대표 사진과 바꿀 수 있어요.</span>
           )}
         </div>
       </div>
@@ -176,12 +180,12 @@ const collision: CollisionDetection = (args) => {
 function CoverSlot({
   cover,
   swapTarget,
-  arranging,
+  dragging,
   onPick,
 }: {
   cover: PhotoSlot | null;
   swapTarget: boolean;
-  arranging: boolean;
+  dragging: boolean;
   onPick: () => void;
 }) {
   const drop = useDroppable({ id: COVER_ID });
@@ -196,7 +200,7 @@ function CoverSlot({
         type="button"
         className={`cover-pick${highlight ? ' is-swap-target' : ''}`}
         onClick={onPick}
-        disabled={arranging}
+        disabled={dragging}
       >
         <PhotoIcon size={36} strokeWidth={1.6} />
         대표 사진 고르기
@@ -213,13 +217,13 @@ function CoverSlot({
       className={`cover-preview${drag.isDragging ? ' is-placeholder' : ''}${highlight ? ' is-swap-target' : ''}`}
       {...drag.attributes}
       {...drag.listeners}
-      aria-label="대표 사진. 길게 누른 채 끌어서 다른 사진과 바꾸기"
+      aria-label="대표 사진. 끌어서 다른 사진과 바꾸기"
     >
       <Wiggle index={0}>
         <img src={cover.preview} alt="대표 사진" decoding="async" />
         <SlotState slot={cover} />
       </Wiggle>
-      {!arranging && (
+      {!dragging && (
         <button type="button" className="chip-btn" onClick={onPick} {...stopDrag}>
           사진 바꾸기
         </button>
@@ -232,13 +236,13 @@ function ExtraSlot({
   slot,
   index,
   swapTarget,
-  arranging,
+  dragging,
   onRemove,
 }: {
   slot: PhotoSlot;
   index: number;
   swapTarget: boolean;
-  arranging: boolean;
+  dragging: boolean;
   onRemove: () => void;
 }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging, isOver } = useSortable({
@@ -251,13 +255,13 @@ function ExtraSlot({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       {...attributes}
       {...listeners}
-      aria-label={`추가 사진 ${index + 1}. 길게 누른 채 끌어서 순서 바꾸기`}
+      aria-label={`추가 사진 ${index + 1}. 끌어서 순서 바꾸기`}
     >
       <Wiggle index={index + 1}>
         <img src={slot.preview} alt={`추가 사진 ${index + 1}`} decoding="async" />
         <SlotState slot={slot} />
       </Wiggle>
-      {!arranging && (
+      {!dragging && (
         <button type="button" className="thumb-remove" aria-label="사진 빼기" onClick={onRemove} {...stopDrag}>
           <CloseIcon size={12} strokeWidth={3} />
         </button>
@@ -273,7 +277,7 @@ const stopDrag = {
   onKeyDown: (e: { stopPropagation: () => void }) => e.stopPropagation(),
 };
 
-/** 정리 모드에서 흔들리는 안쪽 틀. 칸 자체는 드래그 위치(transform)를 쓰므로 흔들림은 안쪽에 준다 */
+/** 흔들리는 안쪽 틀(정리 모드 표시). 칸 자체는 드래그 위치(transform)를 쓰므로 흔들림은 안쪽에 준다 */
 function Wiggle({ index, children }: { index: number; children: ReactNode }) {
   return (
     <div className="photo-wiggle" style={{ animationDelay: `${(index % 3) * -0.12}s` }}>
